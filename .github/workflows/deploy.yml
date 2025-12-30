@@ -22,18 +22,23 @@ jobs:
           - name: tgp.userdashboard
             context: TGP.UserDashboard
             file: TGP.UserDashboard/Dockerfile
+            appName: tgp-dashboard-prod
           - name: tgp.microservices.sso
             context: TGP.Microservices.SSO
             file: TGP.Microservices.SSO/Dockerfile
+            appName: tgp-sso-prod
           - name: tgp.microservices.devicegateway
             context: TGP.Microservices.DeviceGateway
             file: TGP.Microservices.DeviceGateway/Dockerfile
+            appName: tgp-gateway-prod
           - name: tgp.microservices.reporting
             context: TGP.Microservices.Reporting
             file: TGP.Microservices.Reporting/Dockerfile
+            appName: tgp-reporting-prod
           - name: tgp.microservices.analysis
             context: TGP.Microservices.Analysis
             file: TGP.Microservices.Analysis/Dockerfile
+            appName: tgp-analysis-prod
 
     steps:
       - name: Checkout repository
@@ -60,3 +65,11 @@ jobs:
           tags: ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:latest,${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
           build-args: |
              GH_TOKEN=${{ secrets.GH_PAT }}
+
+      - name: Deploy to Azure Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: ${{ env.ACR_NAME }}
+          containerAppName: ${{ matrix.service.appName }}
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
