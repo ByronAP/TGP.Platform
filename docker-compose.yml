@@ -1,0 +1,67 @@
+services:
+  tgp-postgres:
+    image: postgres:16-alpine
+    container_name: tgp-postgres
+    environment:
+      POSTGRES_USER: tgp_user
+      POSTGRES_PASSWORD: tgp_password
+      POSTGRES_DB: tgp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tgp-network
+    restart: unless-stopped
+
+  tgp-redis:
+    image: redis:alpine
+    container_name: tgp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tgp-network
+    restart: unless-stopped
+
+  tgp-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: tgp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: tgp_user
+      RABBITMQ_DEFAULT_PASS: tgp_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - tgp-network
+    restart: unless-stopped
+
+  tgp-minio:
+    image: minio/minio
+    container_name: tgp-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: tgp_minio_user
+      MINIO_ROOT_PASSWORD: tgp_minio_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - tgp-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+
+networks:
+  tgp-network:
+    driver: bridge

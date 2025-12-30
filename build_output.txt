@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  TGP.Data -> C:\Users\bapen\source\repos\ByronAP\TGP.Data\src\TGP.Data\bin\Debug\net10.0\TGP.Data.dll
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(2,7): error CS0246: The type or namespace name 'Amazon' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(3,7): error CS0246: The type or namespace name 'Amazon' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(6,7): error CS0246: The type or namespace name 'RabbitMQ' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\HealthCheckExtensions.cs(5,7): error CS0246: The type or namespace name 'RabbitMQ' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(49,22): error CS0246: The type or namespace name 'RabbitMqOptions' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(56,18): error CS0246: The type or namespace name 'RabbitMqOptions' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+
+Build FAILED.
+
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(2,7): error CS0246: The type or namespace name 'Amazon' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(3,7): error CS0246: The type or namespace name 'Amazon' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(6,7): error CS0246: The type or namespace name 'RabbitMQ' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\HealthCheckExtensions.cs(5,7): error CS0246: The type or namespace name 'RabbitMQ' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(49,22): error CS0246: The type or namespace name 'RabbitMqOptions' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\HealthChecks\DiagnosticsService.cs(56,18): error CS0246: The type or namespace name 'RabbitMqOptions' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\bapen\source\repos\ByronAP\TGP.UserDashboard\src\TGP.UserDashboard\TGP.UserDashboard.csproj]
+    0 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:02.37

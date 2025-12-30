@@ -1,0 +1,18 @@
+[submodule "TGP.Data"]
+	path = TGP.Data
+	url = https://github.com/ByronAP/TGP.Data.git
+[submodule "TGP.UserDashboard"]
+	path = TGP.UserDashboard
+	url = https://github.com/ByronAP/TGP.UserDashboard.git
+[submodule "TGP.Microservices.SSO"]
+	path = TGP.Microservices.SSO
+	url = https://github.com/ByronAP/TGP.Microservices.SSO.git
+[submodule "TGP.Microservices.DeviceGateway"]
+	path = TGP.Microservices.DeviceGateway
+	url = https://github.com/ByronAP/TGP.Microservices.DeviceGateway.git
+[submodule "TGP.Microservices.Analysis"]
+	path = TGP.Microservices.Analysis
+	url = https://github.com/ByronAP/TGP.Microservices.Analysis.git
+[submodule "TGP.Microservices.Reporting"]
+	path = TGP.Microservices.Reporting
+	url = https://github.com/ByronAP/TGP.Microservices.Reporting.git

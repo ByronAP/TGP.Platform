@@ -1,0 +1,59 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  ACR_NAME: tgpacrkt34yxp4xc3hs
+  RESOURCE_GROUP: rg-tgp-prod-northcentralus
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC login if used, or SP login
+    
+    strategy:
+      matrix:
+        service:
+          - name: tgp.userdashboard
+            context: TGP.UserDashboard
+            file: TGP.UserDashboard/Dockerfile
+          - name: tgp.microservices.sso
+            context: TGP.Microservices.SSO
+            file: TGP.Microservices.SSO/Dockerfile
+          - name: tgp.microservices.devicegateway
+            context: TGP.Microservices.DeviceGateway
+            file: TGP.Microservices.DeviceGateway/Dockerfile
+          - name: tgp.microservices.reporting
+            context: TGP.Microservices.Reporting
+            file: TGP.Microservices.Reporting/Dockerfile
+          - name: tgp.microservices.analysis
+            context: TGP.Microservices.Analysis
+            file: TGP.Microservices.Analysis/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.file }}
+          push: true
+          tags: ${{ env.ACR_NAME }.azurecr.io/${{ matrix.service.name }}:latest,${{ env.ACR_NAME }.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
