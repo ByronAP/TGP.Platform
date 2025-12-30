@@ -31,7 +31,7 @@ $DbPasswordPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([Sy
 Write-Host "Deploying Bicep Template..." -ForegroundColor Yellow
 az deployment group create `
     --resource-group $ResourceGroupName `
-    --template-file infrastructure/main.bicep `
+    --template-file ./main.bicep `
     --parameters environmentName=$Environment dbPassword=$DbPasswordPlain
 
 if ($LASTEXITCODE -eq 0) {

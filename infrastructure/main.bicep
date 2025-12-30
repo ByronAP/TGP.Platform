@@ -94,10 +94,14 @@ module storage 'modules/storage.bicep' = {
 var commonEnvVars = [
   {
     name: 'ConnectionStrings__DefaultConnection'
-    value: 'Server=${sql.outputs.fqdn};Database=${sql.outputs.databaseName};User Id=${adminUsername};Password=${adminPassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+    value: 'Server=${sql.outputs.fqdn};Database=${sql.outputs.databaseName};User Id=tgpadmin;Password=${dbPassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
   }
   {
     name: 'ConnectionStrings__Redis'
+    value: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
+  }
+  {
+    name: 'Redis__ConnectionString'
     value: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
   }
   {
@@ -115,6 +119,18 @@ var commonEnvVars = [
   {
     name: 'ASPNETCORE_ENVIRONMENT'
     value: 'Production' 
+  }
+  {
+    name: 'ServiceUrls__Sso'
+    value: 'https://tgp-sso-${environmentName}.${acaEnv.outputs.defaultDomain}'
+  }
+  {
+    name: 'ServiceUrls__Gateway'
+    value: 'https://tgp-gateway-${environmentName}.${acaEnv.outputs.defaultDomain}'
+  }
+  {
+    name: 'ServiceUrls__Reporting'
+    value: 'https://tgp-reporting-${environmentName}.internal.${acaEnv.outputs.defaultDomain}'
   }
 ]
 
