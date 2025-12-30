@@ -16,3 +16,24 @@
 [submodule "TGP.Microservices.Reporting"]
 	path = TGP.Microservices.Reporting
 	url = https://github.com/ByronAP/TGP.Microservices.Reporting.git
+[submodule "TGP.Assets"]
+	path = TGP.Assets
+	url = https://github.com/ByronAP/TGP.Assets.git
+[submodule "TGP.ChromeExtension"]
+	path = TGP.ChromeExtension
+	url = https://github.com/ByronAP/TGP.ChromeExtension.git
+[submodule "TGP.Client.Android"]
+	path = TGP.Client.Android
+	url = https://github.com/ByronAP/TGP.Client.Android.git
+[submodule "TGP.DbMigrator"]
+	path = TGP.DbMigrator
+	url = https://github.com/ByronAP/TGP.DbMigrator.git
+[submodule "TGP.LandingPage"]
+	path = TGP.LandingPage
+	url = https://github.com/ByronAP/tgp-landing-page.git
+[submodule "TGP.TestDataGenerator"]
+	path = TGP.TestDataGenerator
+	url = https://github.com/ByronAP/TGP.TestDataGenerator.git
+[submodule "TGP.Windows.Client"]
+	path = TGP.Windows.Client
+	url = https://github.com/ByronAP/tgp-windows-client.git
