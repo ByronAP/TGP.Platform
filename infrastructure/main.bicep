@@ -27,16 +27,6 @@ param dbPassword string
 @description('The JWT signing secret key (min 32 characters)')
 param jwtSecretKey string
 
-// Module: Key Vault (deployed first to store secrets)
-module keyVault 'modules/keyVault.bicep' = {
-  name: 'keyVaultDeployment'
-  params: {
-    location: location
-    keyVaultName: 'tgp-kv-${environmentName}-${resourceSuffix}'
-    tags: tags
-  }
-}
-
 // Module: Container Registry
 module acr 'modules/containerRegistry.bicep' = {
   name: 'acrDeployment'
@@ -101,73 +91,18 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
-// ============================================================================
-// Key Vault Secrets
-// ============================================================================
-// Store all sensitive configuration in Key Vault for centralized access
-
-resource keyVaultRef 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVault.outputs.keyVaultName
-}
-
-// JWT Secret Key
-resource jwtSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'Jwt--SecretKey'
-  properties: {
-    value: jwtSecretKey
-  }
-}
-
-resource jwtIssuer 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'Jwt--Issuer'
-  properties: {
-    value: 'TGP.SSO'
-  }
-}
-
-resource jwtAudience 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'Jwt--Audience'
-  properties: {
-    value: 'TGP.Platform'
-  }
-}
-
-// Database Connection String
-resource dbConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'ConnectionStrings--DefaultConnection'
-  properties: {
-    value: 'Server=${sql.outputs.fqdn};Database=${sql.outputs.databaseName};User Id=tgpadmin;Password=${dbPassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
-  }
-}
-
-// Redis Connection String
-resource redisConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'Redis--ConnectionString'
-  properties: {
-    value: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
-  }
-}
-
-// Service Bus Connection String
-resource serviceBusConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'ServiceBus--ConnectionString'
-  properties: {
-    value: 'Endpoint=${serviceBus.outputs.endpoint};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=${serviceBus.outputs.primaryKey}'
-  }
-}
-
-// Storage Connection String
-resource storageConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVaultRef
-  name: 'Storage--ConnectionString'
-  properties: {
-    value: 'DefaultEndpointsProtocol=https;AccountName=${storage.outputs.storageAccountName};AccountKey=${storage.outputs.storageKey};EndpointSuffix=${environment().suffixes.storage}'
+// Module: Key Vault with all secrets
+module keyVault 'modules/keyVault.bicep' = {
+  name: 'keyVaultDeployment'
+  params: {
+    location: location
+    keyVaultName: 'tgpkv${environmentName}${take(resourceSuffix, 10)}'
+    tags: tags
+    jwtSecretKey: jwtSecretKey
+    dbConnectionString: 'Server=${sql.outputs.fqdn};Database=${sql.outputs.databaseName};User Id=tgpadmin;Password=${dbPassword};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+    redisConnectionString: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
+    serviceBusConnectionString: 'Endpoint=${serviceBus.outputs.endpoint};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=${serviceBus.outputs.primaryKey}'
+    storageConnectionString: 'DefaultEndpointsProtocol=https;AccountName=${storage.outputs.storageAccountName};AccountKey=${storage.outputs.storageKey};EndpointSuffix=${environment().suffixes.storage}'
   }
 }
 
@@ -175,7 +110,7 @@ resource storageConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' 
 // Microservices Deployment
 // ============================================================================
 
-// Common environment variables - now using Key Vault URI instead of hardcoded secrets
+// Common environment variables - now using Key Vault URI
 var commonEnvVars = [
   {
     name: 'KeyVault__Uri'
@@ -215,12 +150,7 @@ module sso 'modules/container-app.bicep' = {
     isExternalIngress: true
     tags: tags
   }
-  dependsOn: [
-    jwtSecret
-    jwtIssuer
-    jwtAudience
-    dbConnectionString
-  ]
+  dependsOn: [keyVault]
 }
 
 // 2. Device Gateway (Ingestion)
@@ -239,15 +169,7 @@ module deviceGateway 'modules/container-app.bicep' = {
     isExternalIngress: true
     tags: tags
   }
-  dependsOn: [
-    jwtSecret
-    jwtIssuer
-    jwtAudience
-    dbConnectionString
-    redisConnectionString
-    storageConnectionString
-    serviceBusConnectionString
-  ]
+  dependsOn: [keyVault]
 }
 
 // 3. User Dashboard (UI)
@@ -266,12 +188,7 @@ module userDashboard 'modules/container-app.bicep' = {
     isExternalIngress: true
     tags: tags
   }
-  dependsOn: [
-    dbConnectionString
-    redisConnectionString
-    storageConnectionString
-    serviceBusConnectionString
-  ]
+  dependsOn: [keyVault]
 }
 
 // 4. Analysis Service (Worker)
@@ -287,14 +204,10 @@ module analysis 'modules/container-app.bicep' = {
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
     containerPort: 8080
-    isExternalIngress: false // Worker service
+    isExternalIngress: false
     tags: tags
   }
-  dependsOn: [
-    dbConnectionString
-    storageConnectionString
-    serviceBusConnectionString
-  ]
+  dependsOn: [keyVault]
 }
 
 // 5. Reporting Service (Worker/API)
@@ -313,9 +226,7 @@ module reporting 'modules/container-app.bicep' = {
     isExternalIngress: false 
     tags: tags
   }
-  dependsOn: [
-    dbConnectionString
-  ]
+  dependsOn: [keyVault]
 }
 
 // Outputs
