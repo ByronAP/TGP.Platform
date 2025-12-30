@@ -56,4 +56,4 @@ jobs:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.file }}
           push: true
-          tags: ${{ env.ACR_NAME }.azurecr.io/${{ matrix.service.name }}:latest,${{ env.ACR_NAME }.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
+          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:latest,${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
