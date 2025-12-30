@@ -2,7 +2,8 @@ param (
     [string]$ResourceGroupName = "rg-tgp-prod-northcentralus",
     [string]$Location = "northcentralus",
     [string]$Environment = "prod",
-    [securestring]$DbPassword
+    [securestring]$DbPassword,
+    [securestring]$JwtSecretKey
 )
 
 Write-Host "Starting TGP Infrastructure Deployment..." -ForegroundColor Cyan
@@ -27,15 +28,30 @@ if (-not $DbPassword) {
 }
 $DbPasswordPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($DbPassword))
 
+# Prompt for JWT Secret Key if not provided
+if (-not $JwtSecretKey) {
+    $JwtSecretKey = Read-Host "Please enter a JWT secret key (min 32 characters)" -AsSecureString
+}
+$JwtSecretKeyPlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($JwtSecretKey))
+
+# Validate JWT key length
+if ($JwtSecretKeyPlain.Length -lt 32) {
+    Write-Error "JWT secret key must be at least 32 characters for HS256 security."
+    exit 1
+}
+
 # Deploy Infrastructure
-Write-Host "Deploying Bicep Template..." -ForegroundColor Yellow
+Write-Host "Deploying Bicep Template (includes Key Vault)..." -ForegroundColor Yellow
 az deployment group create `
     --resource-group $ResourceGroupName `
     --template-file ./main.bicep `
-    --parameters environmentName=$Environment dbPassword=$DbPasswordPlain
+    --parameters environmentName=$Environment dbPassword=$DbPasswordPlain jwtSecretKey=$JwtSecretKeyPlain
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Deployment Completed Successfully!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Key Vault has been created with all secrets." -ForegroundColor Cyan
+    Write-Host "Services will automatically load secrets from Key Vault via KeyVault__Uri environment variable." -ForegroundColor Cyan
 } else {
     Write-Error "Deployment Failed."
 }
