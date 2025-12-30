@@ -58,3 +58,5 @@ jobs:
           file: ${{ matrix.service.file }}
           push: true
           tags: ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:latest,${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ github.sha }}
+          build-args: |
+             GH_TOKEN=${{ secrets.GH_PAT }}
