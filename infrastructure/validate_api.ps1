@@ -22,6 +22,19 @@ try {
     $content = $loginResponse.Content | ConvertFrom-Json
     $userToken = $content.accessToken
     Write-Host "   User Login successful."
+
+    function Parse-Jwt {
+        param([string]$token)
+        $payload = $token.Split('.')[1]
+        $padding = $payload.Length % 4
+        if ($padding -ne 0) { $payload += '=' * (4 - $padding) }
+        $json = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($payload))
+        return $json | ConvertFrom-Json
+    }
+    
+    $claims = Parse-Jwt $userToken
+    Write-Host "   User Claims:"
+    $claims | Format-List
 } catch {
     Write-Error "   User Login failed: $_"
     exit 1
@@ -40,12 +53,13 @@ $registerHeaders = @{
 }
 
 try {
-    $registerResponse = Invoke-WebRequest -Uri "$ssoUrl/api/v1/devices/register" -Method Post -Body $registerBody -ContentType "application/json" -Headers $registerHeaders -UseBasicParsing
+    $registerResponse = Invoke-WebRequest -Uri "$ssoUrl/api/v1/devices/register" -Method Post -Body $registerBody -ContentType "application/json" -Headers $registerHeaders -UseBasicParsing -AllowInsecureRedirect
     $content = $registerResponse.Content | ConvertFrom-Json
     $deviceToken = $content.accessToken
     Write-Host "   Device Registration successful."
 } catch {
     Write-Host "   Device Registration failed."
+    Write-Host "   Error: $_"
     if ($_.Exception.Response) {
         Write-Host "   Status Code: $($_.Exception.Response.StatusCode.value__)"
         $stream = $_.Exception.Response.GetResponseStream()
@@ -74,10 +88,9 @@ try {
     Write-Host "   SUCCESS: User reported."
 } catch {
     Write-Host "   Report User failed."
-     if ($_.Exception.Response) {
+    if ($_.Exception.Response) {
         Write-Host "   Status Code: $($_.Exception.Response.StatusCode.value__)"
-        $stream = $_.Exception.Response.GetResponseStream()
-        $reader = New-Object System.IO.StreamReader $stream
-        Write-Host "   Body: $($reader.ReadToEnd())"
+        $errorBody = $_.Exception.Response.Content.ReadAsStringAsync().Result
+        Write-Host "   Body: $errorBody"
     }
 }
