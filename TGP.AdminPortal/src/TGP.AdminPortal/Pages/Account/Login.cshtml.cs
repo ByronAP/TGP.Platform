@@ -53,7 +53,7 @@ public class LoginModel : PageModel
             var client = _httpClientFactory.CreateClient("SSO");
             var loginRequest = new
             {
-                Email = Email,
+                Username = Email, // API expects Username, but we use Email as username
                 Password = Password
             };
 
