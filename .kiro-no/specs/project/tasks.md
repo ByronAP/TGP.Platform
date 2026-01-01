@@ -82,6 +82,26 @@
 - [ ] Command status tracking (ack/completion) with UI
 - [ ] Unified configuration management with concurrency checks
 
+### Device/Child/Login UX Redesign (Phases 3–9)
+- [x] Add detected-user conversational review component partial
+- [x] Add quick-assign dropdown component partial
+- [x] Update dashboard alert to “new logins to review” flow
+- [x] Add per-device login counts on Devices list
+- [x] Redesign Device Details into categorized login sections
+- [x] Fix login state classification (pending/unassigned/ignored)
+- [x] Redesign Detected Users page (rename, flow, bulk actions)
+- [x] Limit UserSettings when unassigned (basic monitoring only)
+- [x] Add UserSettings child selector for linked logins
+- [x] Rework UnassignedUsers into “Logins I’m Watching” manager
+- [x] Add UnassignedUsers actions (edit rules, stop watching, bulk)
+- [x] Add navigation link to UnassignedUsers in main menu
+- [x] Update Children Details with “Manage rules” links (profileId)
+- [ ] Add Children Details “Available to Connect” section
+- [ ] Complete terminology cleanup (“login” vs “account”) across UI
+- [ ] Add consistent loading/empty/error states across redesigned pages
+- [ ] Wire real-time updates for new logins on redesigned surfaces
+- [ ] Restore missing docs-inprog walkthrough.md or update doc links
+
 ### Reporting
 - [x] Daily report page with charts
 - [ ] Filters and export support
