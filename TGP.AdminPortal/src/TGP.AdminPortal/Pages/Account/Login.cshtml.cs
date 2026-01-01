@@ -70,7 +70,7 @@ public class LoginModel : PageModel
                 }
 
                 // Check if user has admin role
-                if (!result.Roles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                if (!result.User.Roles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
                                            r.Equals("SystemAdmin", StringComparison.OrdinalIgnoreCase)))
                 {
                     _logger.LogWarning("User {Email} attempted admin login without admin role", Email);
@@ -81,15 +81,15 @@ public class LoginModel : PageModel
                 // Create claims for the authenticated admin
                 var claims = new List<Claim>
                 {
-                    new(ClaimTypes.NameIdentifier, result.UserId),
+                    new(ClaimTypes.NameIdentifier, result.User.Id),
                     new(ClaimTypes.Email, Email),
-                    new(ClaimTypes.Name, result.Email ?? Email),
+                    new(ClaimTypes.Name, result.User.Email ?? Email),
                     new("access_token", result.AccessToken ?? ""),
-                    new("tenant_id", result.TenantId ?? "")
+                    new("tenant_id", "") // SSO response doesn't provide tenant_id in User object currently
                 };
 
                 // Add role claims
-                foreach (var role in result.Roles)
+                foreach (var role in result.User.Roles)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, role));
                 }
@@ -128,11 +128,19 @@ public class LoginModel : PageModel
 
     private class LoginResponse
     {
-        public string UserId { get; set; } = "";
-        public string? Email { get; set; }
-        public string? AccessToken { get; set; }
-        public string? RefreshToken { get; set; }
-        public string? TenantId { get; set; }
+        public string AccessToken { get; set; } = "";
+        public string RefreshToken { get; set; } = "";
+        public int ExpiresIn { get; set; }
+        public string TokenType { get; set; } = "";
+        public UserResponse User { get; set; } = new();
+        public string? TenantStatus { get; set; }
+    }
+
+    private class UserResponse
+    {
+        public string Id { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
         public List<string> Roles { get; set; } = new();
     }
 }
