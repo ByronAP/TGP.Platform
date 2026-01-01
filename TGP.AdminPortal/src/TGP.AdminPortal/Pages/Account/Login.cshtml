@@ -1,0 +1,51 @@
+@page
+@model TGP.AdminPortal.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Admin Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TGP Admin</title>
+    <link rel="stylesheet" href="~/css/admin.css" />
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>TGP Admin Portal</h1>
+            <p>System Administration</p>
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        
+        <form method="post" class="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="Email" class="form-control" 
+                       value="@Model.Email" required autofocus />
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="Password" class="form-control" required />
+            </div>
+            
+            <div class="form-group remember-me">
+                <label>
+                    <input type="checkbox" name="RememberMe" value="true" />
+                    Remember me
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>

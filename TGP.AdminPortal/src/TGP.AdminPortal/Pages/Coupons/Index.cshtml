@@ -1,0 +1,96 @@
+@page "/Coupons"
+@model TGP.AdminPortal.Pages.Coupons.IndexModel
+@{
+    ViewData["Title"] = "Coupons";
+}
+
+<div class="card-header" style="background: var(--card-bg); border-radius: 0.75rem 0.75rem 0 0; margin-bottom: 0;">
+    <h2>Discount Coupons</h2>
+    <a href="/Coupons/Create" class="btn btn-primary btn-sm">+ New Coupon</a>
+</div>
+
+<div class="card" style="border-radius: 0 0 0.75rem 0.75rem;">
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Discount</th>
+                    <th>Expires</th>
+                    <th>Redemptions</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var coupon in Model.Coupons)
+                {
+                    <tr>
+                        <td>
+                            <strong>@coupon.Code</strong>
+                            @if (!string.IsNullOrEmpty(coupon.Description))
+                            {
+                                <br /><small style="color: var(--secondary);">@coupon.Description</small>
+                            }
+                        </td>
+                        <td>
+                            @if (coupon.DiscountPercent.HasValue)
+                            {
+                                <span>@coupon.DiscountPercent.Value%</span>
+                            }
+                            else if (coupon.DiscountAmount.HasValue)
+                            {
+                                <span>$@coupon.DiscountAmount.Value.ToString("N2")</span>
+                            }
+                        </td>
+                        <td>
+                            @if (coupon.ExpiresAt.HasValue)
+                            {
+                                if (coupon.ExpiresAt.Value < DateTime.UtcNow)
+                                {
+                                    <span style="color: var(--danger);">Expired</span>
+                                }
+                                else
+                                {
+                                    @coupon.ExpiresAt.Value.ToString("MMM d, yyyy")
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: var(--secondary);">Never</span>
+                            }
+                        </td>
+                        <td>
+                            @coupon.CurrentRedemptions
+                            @if (coupon.MaxRedemptions.HasValue)
+                            {
+                                <span>/ @coupon.MaxRedemptions</span>
+                            }
+                        </td>
+                        <td>
+                            @if (coupon.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge">Inactive</span>
+                            }
+                        </td>
+                        <td class="actions">
+                            <a href="/Coupons/Edit/@coupon.Id" class="btn btn-secondary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Coupons.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No coupons found. <a href="/Coupons/Create">Create your first coupon</a>.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

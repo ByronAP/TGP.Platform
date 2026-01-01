@@ -1,0 +1,104 @@
+@page "/Subscriptions/Edit/{id:guid}"
+@model TGP.AdminPortal.Pages.Subscriptions.EditModel
+@{
+    ViewData["Title"] = "Manage Subscription";
+}
+
+<div class="card" style="max-width: 700px;">
+    <div class="card-header">
+        <h2>Subscription: @Model.TenantName</h2>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                @Model.SuccessMessage
+            </div>
+        }
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <strong>Tenant:</strong> @Model.TenantName
+            </div>
+            <div>
+                <strong>Current Status:</strong>
+                @switch (Model.Status)
+                {
+                    case "Active":
+                        <span class="badge badge-success">Active</span>
+                        break;
+                    case "Trialing":
+                        <span class="badge badge-info">Trialing</span>
+                        break;
+                    case "PastDue":
+                        <span class="badge badge-danger">Past Due</span>
+                        break;
+                    case "Canceled":
+                        <span class="badge badge-warning">Canceled</span>
+                        break;
+                    default:
+                        <span class="badge">@Model.Status</span>
+                        break;
+                }
+            </div>
+            <div>
+                <strong>Current Plan:</strong> @Model.CurrentPlanName
+            </div>
+            <div>
+                <strong>Amount:</strong> $@Model.Amount.ToString("N2")/@Model.Interval
+            </div>
+            <div>
+                <strong>Period Start:</strong> @Model.PeriodStart.ToString("MMMM d, yyyy")
+            </div>
+            <div>
+                <strong>Period End:</strong> @Model.PeriodEnd.ToString("MMMM d, yyyy")
+            </div>
+        </div>
+        
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
+        
+        <form method="post">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            
+            <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Change Plan</h3>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="planId">Select Plan</label>
+                <select id="planId" name="NewPlanId" class="form-control">
+                    @foreach (var plan in Model.AvailablePlans)
+                    {
+                        <option value="@plan.Id" selected="@(plan.Id == Model.CurrentPlanId)">
+                            @plan.Name - $@plan.Price.ToString("N2")/@(plan.Interval == "Year" ? "year" : "month")
+                        </option>
+                    }
+                </select>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Change Status</h3>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="status">Status</label>
+                <select id="status" name="NewStatus" class="form-control">
+                    <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                    <option value="Trialing" selected="@(Model.Status == "Trialing")">Trialing</option>
+                    <option value="PastDue" selected="@(Model.Status == "PastDue")">Past Due</option>
+                    <option value="Canceled" selected="@(Model.Status == "Canceled")">Canceled</option>
+                </select>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem; font-size: 1.125rem;">Extend Billing Period</h3>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="extendDays">Extend by (days)</label>
+                <input type="number" id="extendDays" name="ExtendDays" class="form-control" 
+                       value="0" min="0" max="365" style="max-width: 150px;" />
+            </div>
+            
+            <div class="actions" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/Subscriptions" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>

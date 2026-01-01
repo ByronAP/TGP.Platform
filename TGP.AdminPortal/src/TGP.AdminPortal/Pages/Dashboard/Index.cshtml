@@ -1,0 +1,88 @@
+@page "/Dashboard"
+@model TGP.AdminPortal.Pages.Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Tenants</div>
+        <div class="stat-value">@Model.TotalTenants</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Subscriptions</div>
+        <div class="stat-value">@Model.ActiveSubscriptions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-value">$@Model.MonthlyRevenue.ToString("N2")</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Devices</div>
+        <div class="stat-value">@Model.TotalDevices</div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h2>Subscription Overview</h2>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Active</th>
+                    <th>Trialing</th>
+                    <th>Past Due</th>
+                    <th>Revenue</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var plan in Model.PlanStats)
+                {
+                    <tr>
+                        <td><strong>@plan.Name</strong></td>
+                        <td>@plan.ActiveCount</td>
+                        <td>@plan.TrialingCount</td>
+                        <td>@plan.PastDueCount</td>
+                        <td>$@plan.Revenue.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Recent Activity</h2>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>User</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var activity in Model.RecentActivity)
+                {
+                    <tr>
+                        <td>@activity.Timestamp.ToString("g")</td>
+                        <td>@activity.Description</td>
+                        <td>@activity.UserEmail</td>
+                    </tr>
+                }
+                @if (!Model.RecentActivity.Any())
+                {
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--secondary);">No recent activity</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

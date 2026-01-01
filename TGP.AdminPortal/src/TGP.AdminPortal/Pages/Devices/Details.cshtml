@@ -1,0 +1,96 @@
+@page "/Devices/Details/{id:guid}"
+@model TGP.AdminPortal.Pages.Devices.DetailsModel
+@{
+    ViewData["Title"] = $"Device: {Model.Name}";
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        @Model.SuccessMessage
+    </div>
+}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Device Info</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> @Model.Name</p>
+            <p><strong>Type:</strong> @Model.DeviceType</p>
+            <p><strong>Tenant:</strong> <a href="/Tenants/Details/@Model.TenantId">@Model.TenantName</a></p>
+            <p><strong>Enrolled:</strong> @Model.CreatedAt.ToString("MMMM d, yyyy")</p>
+            <p><strong>Status:</strong>
+                @if (Model.IsOnline)
+                {
+                    <span class="badge badge-success">Online</span>
+                }
+                else
+                {
+                    <span class="badge">Offline</span>
+                }
+            </p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>Heartbeat History</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Last Heartbeat:</strong> @(Model.LastHeartbeat?.ToString("g") ?? "Never")</p>
+            <p><strong>Total Heartbeats:</strong> @Model.HeartbeatCount</p>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Monitored Users</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Added</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.MonitoredUsers)
+                {
+                    <tr>
+                        <td>@user.Username</td>
+                        <td>@user.CreatedAt.ToString("MMM d, yyyy")</td>
+                    </tr>
+                }
+                @if (!Model.MonitoredUsers.Any())
+                {
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: var(--secondary);">No monitored users</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Device Actions</h2>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="RevokeEnrollment" style="display: inline;">
+            <input type="hidden" name="DeviceId" value="@Model.Id" />
+            <button type="submit" class="btn btn-danger" 
+                    onclick="return confirm('Are you sure you want to revoke this device enrollment? This cannot be undone.');">
+                Revoke Enrollment
+            </button>
+        </form>
+    </div>
+</div>
+
+<div style="margin-top: 1.5rem;">
+    <a href="/Devices" class="btn btn-secondary">Back to Devices</a>
+</div>

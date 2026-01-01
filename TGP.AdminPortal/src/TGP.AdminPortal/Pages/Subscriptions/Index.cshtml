@@ -1,0 +1,96 @@
+@page "/Subscriptions"
+@model TGP.AdminPortal.Pages.Subscriptions.IndexModel
+@{
+    ViewData["Title"] = "Subscriptions";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>All Subscriptions</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <select id="statusFilter" onchange="filterByStatus()" style="padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border);">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Trialing">Trialing</option>
+                <option value="PastDue">Past Due</option>
+                <option value="Canceled">Canceled</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tenant</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Current Period</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var sub in Model.Subscriptions)
+                {
+                    <tr data-status="@sub.Status">
+                        <td>
+                            <strong>@sub.TenantName</strong>
+                        </td>
+                        <td>@sub.PlanName</td>
+                        <td>
+                            @switch (sub.Status)
+                            {
+                                case "Active":
+                                    <span class="badge badge-success">Active</span>
+                                    break;
+                                case "Trialing":
+                                    <span class="badge badge-info">Trialing</span>
+                                    break;
+                                case "PastDue":
+                                    <span class="badge badge-danger">Past Due</span>
+                                    break;
+                                case "Canceled":
+                                    <span class="badge badge-warning">Canceled</span>
+                                    break;
+                                default:
+                                    <span class="badge">@sub.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @sub.PeriodStart.ToString("MMM d") - @sub.PeriodEnd.ToString("MMM d, yyyy")
+                        </td>
+                        <td>$@sub.Amount.ToString("N2")/@sub.Interval</td>
+                        <td class="actions">
+                            <a href="/Subscriptions/Edit/@sub.Id" class="btn btn-secondary btn-sm">Manage</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Subscriptions.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No subscriptions found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function filterByStatus() {
+    const filter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('tbody tr[data-status]');
+    rows.forEach(row => {
+        if (!filter || row.dataset.status === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+}

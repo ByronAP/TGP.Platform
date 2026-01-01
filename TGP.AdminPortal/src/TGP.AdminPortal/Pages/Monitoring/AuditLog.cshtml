@@ -1,0 +1,84 @@
+@page "/Monitoring/AuditLog"
+@model TGP.AdminPortal.Pages.Monitoring.AuditLogModel
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Audit Log</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <select id="actionFilter" onchange="filterLogs()" style="padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border);">
+                <option value="">All Actions</option>
+                @foreach (var action in Model.AvailableActions)
+                {
+                    <option value="@action">@action</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>User</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.Logs)
+                {
+                    <tr data-action="@log.Action">
+                        <td>@log.Timestamp.ToString("MMM d, yyyy HH:mm:ss")</td>
+                        <td><code>@log.Action</code></td>
+                        <td>@log.EntityType</td>
+                        <td>
+                            @if (log.EntityId.HasValue)
+                            {
+                                <code style="font-size: 0.75rem;">@log.EntityId.Value.ToString("N").Substring(0, 8)...</code>
+                            }
+                        </td>
+                        <td>@log.UserEmail</td>
+                        <td>@log.IpAddress</td>
+                        <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@log.Details">
+                            @log.Details
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Logs.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No audit logs found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 1rem;">
+    <a href="/Monitoring" class="btn btn-secondary">Back to Monitoring</a>
+</div>
+
+@section Scripts {
+<script>
+function filterLogs() {
+    const filter = document.getElementById('actionFilter').value;
+    const rows = document.querySelectorAll('tbody tr[data-action]');
+    rows.forEach(row => {
+        if (!filter || row.dataset.action === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+}

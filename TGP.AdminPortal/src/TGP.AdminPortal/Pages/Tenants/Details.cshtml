@@ -1,0 +1,115 @@
+@page "/Tenants/Details/{id:guid}"
+@model TGP.AdminPortal.Pages.Tenants.DetailsModel
+@{
+    ViewData["Title"] = $"Tenant: {Model.Name}";
+}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Tenant Details</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> @Model.Name</p>
+            <p><strong>Owner:</strong> @Model.OwnerEmail</p>
+            <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMMM d, yyyy")</p>
+            <p><strong>Updated:</strong> @Model.UpdatedAt.ToString("MMMM d, yyyy")</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>Subscription</h2>
+        </div>
+        <div class="card-body">
+            @if (Model.Subscription != null)
+            {
+                <p><strong>Plan:</strong> @Model.Subscription.PlanName</p>
+                <p><strong>Status:</strong> 
+                    @switch (Model.Subscription.Status)
+                    {
+                        case "Active":
+                            <span class="badge badge-success">Active</span>
+                            break;
+                        case "Trialing":
+                            <span class="badge badge-info">Trialing</span>
+                            break;
+                        default:
+                            <span class="badge">@Model.Subscription.Status</span>
+                            break;
+                    }
+                </p>
+                <p><strong>Renews:</strong> @Model.Subscription.PeriodEnd.ToString("MMM d, yyyy")</p>
+                <a href="/Subscriptions/Edit/@Model.Subscription.Id" class="btn btn-secondary btn-sm">Manage</a>
+            }
+            else
+            {
+                <p style="color: var(--secondary);">No active subscription</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Members (@Model.Members.Count)</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var member in Model.Members)
+                {
+                    <tr>
+                        <td>@member.Email</td>
+                        <td>@member.Role</td>
+                        <td>@member.JoinedAt.ToString("MMM d, yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Devices (@Model.Devices.Count)</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var device in Model.Devices)
+                {
+                    <tr>
+                        <td>@device.Name</td>
+                        <td>@device.DeviceType</td>
+                        <td>@device.LastHeartbeat?.ToString("g") ?? "Never"</td>
+                    </tr>
+                }
+                @if (!Model.Devices.Any())
+                {
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--secondary);">No devices enrolled</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 1.5rem;">
+    <a href="/Tenants" class="btn btn-secondary">Back to Tenants</a>
+</div>

@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TGP Admin</title>
+    <link rel="stylesheet" href="~/css/admin.css" />
+</head>
+<body>
+    <div class="admin-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>TGP Admin</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/Dashboard" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Dashboard") == true ? "active" : "")">
+                        <span class="nav-icon">📊</span>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-section">Billing</li>
+                <li class="nav-item">
+                    <a href="/Plans" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Plans") == true ? "active" : "")">
+                        <span class="nav-icon">📋</span>
+                        Plans
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/Subscriptions" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Subscriptions") == true ? "active" : "")">
+                        <span class="nav-icon">💳</span>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/Coupons" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Coupons") == true ? "active" : "")">
+                        <span class="nav-icon">🎟️</span>
+                        Coupons
+                    </a>
+                </li>
+                <li class="nav-section">Management</li>
+                <li class="nav-item">
+                    <a href="/Tenants" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Tenants") == true ? "active" : "")">
+                        <span class="nav-icon">🏠</span>
+                        Tenants
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/Users" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Users") == true ? "active" : "")">
+                        <span class="nav-icon">👥</span>
+                        Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/Devices" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Devices") == true ? "active" : "")">
+                        <span class="nav-icon">💻</span>
+                        Devices
+                    </a>
+                </li>
+                <li class="nav-section">System</li>
+                <li class="nav-item">
+                    <a href="/Monitoring" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString()?.Contains("Monitoring") == true ? "active" : "")">
+                        <span class="nav-icon">📈</span>
+                        Monitoring
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span>@User.Identity?.Name</span>
+                </div>
+                <a href="/Account/Logout" class="logout-link">Sign Out</a>
+            </div>
+        </nav>
+        
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>@ViewData["Title"]</h1>
+            </header>
+            <div class="content">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

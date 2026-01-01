@@ -1,0 +1,82 @@
+@page "/Users"
+@model TGP.AdminPortal.Pages.Users.IndexModel
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>All Users</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Email Confirmed</th>
+                    <th>MFA</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td><strong>@user.Email</strong></td>
+                        <td>
+                            @foreach (var role in user.Roles)
+                            {
+                                <span class="badge badge-info" style="margin-right: 0.25rem;">@role</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.EmailConfirmed)
+                            {
+                                <span style="color: var(--success);">✓</span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--danger);">✗</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.MfaEnabled)
+                            {
+                                <span style="color: var(--success);">Enabled</span>
+                            }
+                            else
+                            {
+                                <span style="color: var(--secondary);">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Disabled</span>
+                            }
+                        </td>
+                        <td>@user.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td class="actions">
+                            <a href="/Users/Details/@user.Id" class="btn btn-secondary btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Users.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No users found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

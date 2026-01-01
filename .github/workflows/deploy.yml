@@ -39,6 +39,10 @@ jobs:
             context: TGP.Microservices.Analysis
             file: TGP.Microservices.Analysis/Dockerfile
             appName: tgp-analysis-prod
+          - name: tgp.adminportal
+            context: TGP.AdminPortal
+            file: TGP.AdminPortal/Dockerfile
+            appName: tgp-admin-prod
 
     steps:
       - name: Checkout repository

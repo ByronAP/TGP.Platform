@@ -1,0 +1,83 @@
+@page "/Coupons/Edit/{id:guid}"
+@model TGP.AdminPortal.Pages.Coupons.EditModel
+@{
+    ViewData["Title"] = "Edit Coupon";
+}
+
+<div class="card" style="max-width: 600px;">
+    <div class="card-header">
+        <h2>Edit Coupon: @Model.Code</h2>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                @Model.SuccessMessage
+            </div>
+        }
+        
+        <form method="post">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="code">Coupon Code *</label>
+                <input type="text" id="code" name="Code" class="form-control" 
+                       value="@Model.Code" required style="text-transform: uppercase;" />
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="description">Description</label>
+                <input type="text" id="description" name="Description" class="form-control" 
+                       value="@Model.Description" />
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label for="discountPercent">Discount Percent (%)</label>
+                    <input type="number" id="discountPercent" name="DiscountPercent" class="form-control" 
+                           value="@Model.DiscountPercent" step="0.01" min="0" max="100" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="discountAmount">— OR — Discount Amount ($)</label>
+                    <input type="number" id="discountAmount" name="DiscountAmount" class="form-control" 
+                           value="@Model.DiscountAmount" step="0.01" min="0" />
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label for="expiresAt">Expires (optional)</label>
+                    <input type="date" id="expiresAt" name="ExpiresAt" class="form-control" 
+                           value="@Model.ExpiresAt?.ToString("yyyy-MM-dd")" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxRedemptions">Max Redemptions</label>
+                    <input type="number" id="maxRedemptions" name="MaxRedemptions" class="form-control" 
+                           value="@Model.MaxRedemptions" min="1" />
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>
+                    <input type="checkbox" name="IsActive" value="true" checked="@Model.IsActive" />
+                    Active
+                </label>
+            </div>
+            
+            <p style="color: var(--secondary); font-size: 0.875rem;">
+                Current Redemptions: <strong>@Model.CurrentRedemptions</strong>
+            </p>
+            
+            <div class="actions" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/Coupons" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

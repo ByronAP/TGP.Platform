@@ -1,0 +1,56 @@
+@page "/Plans"
+@model TGP.AdminPortal.Pages.Plans.IndexModel
+@{
+    ViewData["Title"] = "Plans";
+}
+
+<div class="card-header" style="background: var(--card-bg); border-radius: 0.75rem 0.75rem 0 0; margin-bottom: 0;">
+    <h2>Subscription Plans</h2>
+    <a href="/Plans/Create" class="btn btn-primary btn-sm">+ New Plan</a>
+</div>
+
+<div class="card" style="border-radius: 0 0 0.75rem 0.75rem;">
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Interval</th>
+                    <th>Max Devices</th>
+                    <th>Subscribers</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var plan in Model.Plans)
+                {
+                    <tr>
+                        <td>
+                            <strong>@plan.Name</strong>
+                            @if (!string.IsNullOrEmpty(plan.Description))
+                            {
+                                <br /><small style="color: var(--secondary);">@plan.Description</small>
+                            }
+                        </td>
+                        <td>$@plan.Price.ToString("N2")</td>
+                        <td>@plan.Interval</td>
+                        <td>@plan.MaxDevices</td>
+                        <td>@plan.SubscriberCount</td>
+                        <td class="actions">
+                            <a href="/Plans/Edit/@plan.Id" class="btn btn-secondary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Plans.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No plans found. <a href="/Plans/Create">Create your first plan</a>.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

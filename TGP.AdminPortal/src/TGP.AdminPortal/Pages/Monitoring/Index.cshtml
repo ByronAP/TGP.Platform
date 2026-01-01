@@ -1,0 +1,116 @@
+@page "/Monitoring"
+@model TGP.AdminPortal.Pages.Monitoring.IndexModel
+@{
+    ViewData["Title"] = "System Monitoring";
+}
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+    <div class="stat-card">
+        <div class="stat-label">Total Devices</div>
+        <div class="stat-value">@Model.TotalDevices</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Online Now</div>
+        <div class="stat-value" style="color: var(--success);">@Model.OnlineDevices</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Users</div>
+        <div class="stat-value">@Model.ActiveUsers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Heartbeats (24h)</div>
+        <div class="stat-value">@Model.HeartbeatsLast24h.ToString("N0")</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Heartbeats</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>Tenant</th>
+                        <th>Version</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var hb in Model.RecentHeartbeats)
+                    {
+                        <tr>
+                            <td>@hb.DeviceName</td>
+                            <td>@hb.TenantName</td>
+                            <td><code>@hb.ClientVersion</code></td>
+                            <td>@hb.ReceivedAt.ToString("HH:mm:ss")</td>
+                        </tr>
+                    }
+                    @if (!Model.RecentHeartbeats.Any())
+                    {
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--secondary);">No recent heartbeats</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Devices by Type</h2>
+        </div>
+        <div class="card-body">
+            @foreach (var type in Model.DevicesByType)
+            {
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                    <span>@type.Key</span>
+                    <strong>@type.Value</strong>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Recent Audit Logs</h2>
+        <a href="/Monitoring/AuditLog" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>User</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.RecentAuditLogs)
+                {
+                    <tr>
+                        <td>@log.Timestamp.ToString("MMM d HH:mm")</td>
+                        <td><code>@log.Action</code></td>
+                        <td>@log.EntityType</td>
+                        <td>@log.UserEmail</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @log.Details
+                        </td>
+                    </tr>
+                }
+                @if (!Model.RecentAuditLogs.Any())
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--secondary);">No audit logs</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

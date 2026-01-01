@@ -1,0 +1,106 @@
+@page "/Devices"
+@model TGP.AdminPortal.Pages.Devices.IndexModel
+@{
+    ViewData["Title"] = "Devices";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>All Devices</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <select id="typeFilter" onchange="filterByType()" style="padding: 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border);">
+                <option value="">All Types</option>
+                <option value="Windows">Windows</option>
+                <option value="Android">Android</option>
+                <option value="ChromeOS">ChromeOS</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Tenant</th>
+                    <th>Last Heartbeat</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var device in Model.Devices)
+                {
+                    <tr data-type="@device.DeviceType">
+                        <td><strong>@device.Name</strong></td>
+                        <td>@device.DeviceType</td>
+                        <td><a href="/Tenants/Details/@device.TenantId">@device.TenantName</a></td>
+                        <td>
+                            @if (device.LastHeartbeat.HasValue)
+                            {
+                                var ago = DateTime.UtcNow - device.LastHeartbeat.Value;
+                                if (ago.TotalMinutes < 5)
+                                {
+                                    <span style="color: var(--success);">Just now</span>
+                                }
+                                else if (ago.TotalHours < 1)
+                                {
+                                    <span>@((int)ago.TotalMinutes)m ago</span>
+                                }
+                                else if (ago.TotalDays < 1)
+                                {
+                                    <span>@((int)ago.TotalHours)h ago</span>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--secondary);">@device.LastHeartbeat.Value.ToString("MMM d")</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: var(--secondary);">Never</span>
+                            }
+                        </td>
+                        <td>
+                            @if (device.IsOnline)
+                            {
+                                <span class="badge badge-success">Online</span>
+                            }
+                            else
+                            {
+                                <span class="badge">Offline</span>
+                            }
+                        </td>
+                        <td class="actions">
+                            <a href="/Devices/Details/@device.Id" class="btn btn-secondary btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Devices.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No devices found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function filterByType() {
+    const filter = document.getElementById('typeFilter').value;
+    const rows = document.querySelectorAll('tbody tr[data-type]');
+    rows.forEach(row => {
+        if (!filter || row.dataset.type === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+}

@@ -1,0 +1,59 @@
+@page "/Tenants"
+@model TGP.AdminPortal.Pages.Tenants.IndexModel
+@{
+    ViewData["Title"] = "Tenants";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>All Tenants</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Members</th>
+                    <th>Devices</th>
+                    <th>Subscription</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tenant in Model.Tenants)
+                {
+                    <tr>
+                        <td><strong>@tenant.Name</strong></td>
+                        <td>@tenant.OwnerEmail</td>
+                        <td>@tenant.MemberCount</td>
+                        <td>@tenant.DeviceCount</td>
+                        <td>
+                            @if (tenant.HasActiveSubscription)
+                            {
+                                <span class="badge badge-success">@tenant.PlanName</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning">No Subscription</span>
+                            }
+                        </td>
+                        <td>@tenant.CreatedAt.ToString("MMM d, yyyy")</td>
+                        <td class="actions">
+                            <a href="/Tenants/Details/@tenant.Id" class="btn btn-secondary btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Tenants.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                            No tenants found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

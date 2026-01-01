@@ -1,0 +1,138 @@
+@page "/Users/Details/{id:guid}"
+@model TGP.AdminPortal.Pages.Users.DetailsModel
+@{
+    ViewData["Title"] = $"User: {Model.Email}";
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        @Model.SuccessMessage
+    </div>
+}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2>User Details</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Email:</strong> @Model.Email</p>
+            <p><strong>Email Confirmed:</strong> @(Model.EmailConfirmed ? "Yes" : "No")</p>
+            <p><strong>Status:</strong> 
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge badge-danger">Disabled</span>
+                }
+            </p>
+            <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMMM d, yyyy h:mm tt")</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>Roles</h2>
+        </div>
+        <div class="card-body">
+            @foreach (var role in Model.Roles)
+            {
+                <span class="badge badge-info" style="margin-right: 0.5rem; margin-bottom: 0.5rem;">@role</span>
+            }
+            @if (!Model.Roles.Any())
+            {
+                <p style="color: var(--secondary);">No roles assigned</p>
+            }
+            
+            <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
+            
+            <form method="post" asp-page-handler="AddRole" style="display: flex; gap: 0.5rem;">
+                <input type="hidden" name="UserId" value="@Model.Id" />
+                <select name="RoleName" class="form-control" style="flex: 1;">
+                    @foreach (var role in Model.AvailableRoles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Add Role</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Security</h2>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <form method="post" asp-page-handler="ResetPassword">
+                <input type="hidden" name="UserId" value="@Model.Id" />
+                <button type="submit" class="btn btn-secondary">Force Password Reset</button>
+            </form>
+            
+            @if (Model.MfaEnabled)
+            {
+                <form method="post" asp-page-handler="DisableMfa">
+                    <input type="hidden" name="UserId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">Disable MFA</button>
+                </form>
+            }
+            
+            @if (Model.IsActive)
+            {
+                <form method="post" asp-page-handler="DisableUser">
+                    <input type="hidden" name="UserId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">Disable Account</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="EnableUser">
+                    <input type="hidden" name="UserId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-success">Enable Account</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>Tenant Memberships</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tenant</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var membership in Model.TenantMemberships)
+                {
+                    <tr>
+                        <td><a href="/Tenants/Details/@membership.TenantId">@membership.TenantName</a></td>
+                        <td>@membership.Role</td>
+                        <td>@membership.JoinedAt.ToString("MMM d, yyyy")</td>
+                    </tr>
+                }
+                @if (!Model.TenantMemberships.Any())
+                {
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--secondary);">No tenant memberships</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 1.5rem;">
+    <a href="/Users" class="btn btn-secondary">Back to Users</a>
+</div>
