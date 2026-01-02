@@ -43,6 +43,10 @@ jobs:
             context: TGP.AdminPortal
             file: TGP.AdminPortal/Dockerfile
             appName: tgp-admin-prod
+          - name: tgp.microservices.api
+            context: TGP.Microservices.Api
+            file: TGP.Microservices.Api/Dockerfile
+            appName: tgp-api-prod
 
     steps:
       - name: Checkout repository
