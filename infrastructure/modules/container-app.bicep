@@ -54,8 +54,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           image: containerImage
           env: envVars
           resources: {
-            cpu: json('0.5')    // Increased for Argon2 password hashing
-            memory: '1Gi'        // Increased headroom
+            cpu: json('0.25')
+            memory: '0.5Gi'
           }
         }
       ]
