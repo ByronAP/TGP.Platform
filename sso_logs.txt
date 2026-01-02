@@ -1,0 +1,12 @@
+{"TimeStamp": "2026-01-01T23:22:48.48212", "Log": "Connecting to the container 'tgp-sso-prod'..."}
+{"TimeStamp": "2026-01-01T23:22:48.53138", "Log": "Successfully Connected to container: 'tgp-sso-prod' [Revision: 'tgp-sso-prod--0000025', Replica: 'tgp-sso-prod--0000025-64d547bbd-7jjkv']"}
+{"TimeStamp": "2026-01-01T23:22:42.5031269+00:00", "Log": "Microsoft.Hosting.Lifetime[14]"}
+{"TimeStamp": "2026-01-01T23:22:42.5031941+00:00", "Log": "Now listening on: http://[::]:8080"}
+{"TimeStamp": "2026-01-01T23:22:42.5049564+00:00", "Log": "Microsoft.Hosting.Lifetime[0]"}
+{"TimeStamp": "2026-01-01T23:22:42.5049743+00:00", "Log": "Application started. Press Ctrl+C to shut down."}
+{"TimeStamp": "2026-01-01T23:22:42.5058776+00:00", "Log": "Microsoft.Hosting.Lifetime[0]"}
+{"TimeStamp": "2026-01-01T23:22:42.505888+00:00", "Log": "Hosting environment: Production"}
+{"TimeStamp": "2026-01-01T23:22:42.5058907+00:00", "Log": "Microsoft.Hosting.Lifetime[0]"}
+{"TimeStamp": "2026-01-01T23:22:42.5058937+00:00", "Log": "Content root path: /app"}
+{"TimeStamp": "2026-01-01T23:22:43.8084177+00:00", "Log": "Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]"}
+{"TimeStamp": "2026-01-01T23:22:43.808458+00:00", "Log": "Failed to determine the https port for redirect."}

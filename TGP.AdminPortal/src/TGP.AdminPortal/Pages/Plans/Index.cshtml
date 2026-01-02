@@ -15,17 +15,19 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Price</th>
-                    <th>Interval</th>
-                    <th>Max Devices</th>
+                    <th>Status</th>
+                    <th>Pricing</th>
+                    <th>Limits</th>
+                    <th>Features</th>
                     <th>Subscribers</th>
+                    <th>Stripe</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var plan in Model.Plans)
                 {
-                    <tr>
+                    <tr class="@(plan.IsActive ? "" : "opacity-60")">
                         <td>
                             <strong>@plan.Name</strong>
                             @if (!string.IsNullOrEmpty(plan.Description))
@@ -33,10 +35,51 @@
                                 <br /><small style="color: var(--secondary);">@plan.Description</small>
                             }
                         </td>
-                        <td>$@plan.Price.ToString("N2")</td>
-                        <td>@plan.Interval</td>
-                        <td>@plan.MaxDevices</td>
+                        <td>
+                            @if (plan.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Retired</span>
+                            }
+                            @if (!plan.IsVisibleToPublic)
+                            {
+                                <span class="badge badge-warning" title="Not shown on pricing page">Hidden</span>
+                            }
+                        </td>
+                        <td>
+                            <div>$@plan.Price.ToString("N2")/mo</div>
+                            @if (plan.YearlyPrice.HasValue)
+                            {
+                                <small style="color: var(--secondary);">$@plan.YearlyPrice.Value.ToString("N2")/yr</small>
+                            }
+                            @if (plan.TrialDays.HasValue)
+                            {
+                                <br /><small class="text-info">@plan.TrialDays day trial</small>
+                            }
+                        </td>
+                        <td>
+                            <div>@plan.MaxDevices devices</div>
+                            <small style="color: var(--secondary);">@plan.MaxProfiles profiles • @plan.DataRetentionDays days retention</small>
+                        </td>
+                        <td>
+                            <span title="Monitoring features">📊 @plan.MonitoringFeatures/5</span><br />
+                            <span title="Control features">🔒 @plan.ControlFeatures/4</span><br />
+                            <span title="Reporting features">📈 @plan.ReportingFeatures/3</span>
+                        </td>
                         <td>@plan.SubscriberCount</td>
+                        <td>
+                            @if (plan.HasStripeProduct)
+                            {
+                                <span class="badge badge-success" title="Synced with Stripe">✓</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary" title="Not yet synced">–</span>
+                            }
+                        </td>
                         <td class="actions">
                             <a href="/Plans/Edit/@plan.Id" class="btn btn-secondary btn-sm">Edit</a>
                         </td>
@@ -45,7 +88,7 @@
                 @if (!Model.Plans.Any())
                 {
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--secondary); padding: 2rem;">
+                        <td colspan="8" style="text-align: center; color: var(--secondary); padding: 2rem;">
                             No plans found. <a href="/Plans/Create">Create your first plan</a>.
                         </td>
                     </tr>
@@ -54,3 +97,12 @@
         </table>
     </div>
 </div>
+
+<style>
+    .opacity-60 { opacity: 0.6; }
+    .badge-success { background: var(--success, #28a745); color: white; }
+    .badge-secondary { background: var(--secondary, #6c757d); color: white; }
+    .badge-warning { background: var(--warning, #ffc107); color: #212529; }
+    .badge { padding: 0.25em 0.5em; border-radius: 0.25rem; font-size: 0.75em; margin-right: 0.25rem; }
+    .text-info { color: var(--info, #17a2b8); }
+</style>

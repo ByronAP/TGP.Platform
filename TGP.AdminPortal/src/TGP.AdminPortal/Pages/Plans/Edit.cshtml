@@ -4,9 +4,13 @@
     ViewData["Title"] = "Edit Plan";
 }
 
-<div class="card" style="max-width: 600px;">
+<div class="card" style="max-width: 800px;">
     <div class="card-header">
         <h2>Edit Plan: @Model.Name</h2>
+        @if (!Model.IsActive)
+        {
+            <span class="badge badge-secondary">Retired</span>
+        }
     </div>
     <div class="card-body">
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
@@ -23,45 +27,128 @@
         <form method="post">
             <input type="hidden" name="Id" value="@Model.Id" />
             
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="name">Plan Name *</label>
-                <input type="text" id="name" name="Name" class="form-control" 
-                       value="@Model.Name" required />
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="description">Description</label>
-                <textarea id="description" name="Description" class="form-control" 
-                          rows="3">@Model.Description</textarea>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                <div class="form-group">
-                    <label for="price">Price ($) *</label>
-                    <input type="number" id="price" name="Price" class="form-control" 
-                           value="@Model.Price" step="0.01" min="0" required />
+            <!-- Basic Information -->
+            <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                <legend style="padding: 0 0.5rem; font-weight: 600;">Basic Information</legend>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="name">Plan Name *</label>
+                    <input type="text" id="name" name="Name" class="form-control" 
+                           value="@Model.Name" required />
                 </div>
                 
-                <div class="form-group">
-                    <label for="interval">Billing Interval *</label>
-                    <select id="interval" name="Interval" class="form-control">
-                        <option value="Month" selected="@(Model.Interval == "Month")">Monthly</option>
-                        <option value="Year" selected="@(Model.Interval == "Year")">Yearly</option>
-                    </select>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="Description" class="form-control" 
+                              rows="2">@Model.Description</textarea>
                 </div>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="maxDevices">Max Devices *</label>
-                <input type="number" id="maxDevices" name="MaxDevices" class="form-control" 
-                       value="@Model.MaxDevices" min="1" required />
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="stripePriceId">Stripe Price ID</label>
-                <input type="text" id="stripePriceId" name="StripePriceId" class="form-control" 
-                       value="@Model.StripePriceId" placeholder="price_..." />
-            </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="sortOrder">Sort Order</label>
+                        <input type="number" id="sortOrder" name="SortOrder" class="form-control" 
+                               value="@Model.SortOrder" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                            Active
+                        </label>
+                        <small style="color: var(--secondary); display: block;">Unchecking retires the plan (grandfathers existing subscribers)</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="IsVisibleToPublic" value="true" @(Model.IsVisibleToPublic ? "checked" : "") />
+                            Visible to Public
+                        </label>
+                        <small style="color: var(--secondary); display: block;">Show on pricing page</small>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Pricing -->
+            <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                <legend style="padding: 0 0.5rem; font-weight: 600;">Pricing</legend>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="price">Monthly Price ($) *</label>
+                        <input type="number" id="price" name="Price" class="form-control" 
+                               value="@Model.Price" step="0.01" min="0" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="yearlyPrice">Yearly Price ($)</label>
+                        <input type="number" id="yearlyPrice" name="YearlyPrice" class="form-control" 
+                               value="@Model.YearlyPrice" step="0.01" min="0" placeholder="Leave blank for no yearly option" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="trialDays">Trial Days</label>
+                        <input type="number" id="trialDays" name="TrialDays" class="form-control" 
+                               value="@Model.TrialDays" min="0" placeholder="No trial" />
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Limits -->
+            <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                <legend style="padding: 0 0.5rem; font-weight: 600;">Limits</legend>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="maxDevices">Max Devices *</label>
+                        <input type="number" id="maxDevices" name="MaxDevices" class="form-control" 
+                               value="@Model.MaxDevices" min="1" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxProfiles">Max Profiles *</label>
+                        <input type="number" id="maxProfiles" name="MaxProfiles" class="form-control" 
+                               value="@Model.MaxProfiles" min="1" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dataRetentionDays">Data Retention (Days) *</label>
+                        <input type="number" id="dataRetentionDays" name="DataRetentionDays" class="form-control" 
+                               value="@Model.DataRetentionDays" min="1" required />
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Feature Flags -->
+            <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                <legend style="padding: 0 0.5rem; font-weight: 600;">Feature Flags</legend>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                    <!-- Monitoring -->
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--secondary);">📊 Monitoring</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="ProcessMonitoringAllowed" value="true" @(Model.ProcessMonitoringAllowed ? "checked" : "") /> Process Monitoring</label>
+                        <label class="checkbox-label"><input type="checkbox" name="BrowserMonitoringAllowed" value="true" @(Model.BrowserMonitoringAllowed ? "checked" : "") /> Browser Monitoring</label>
+                        <label class="checkbox-label"><input type="checkbox" name="InputMonitoringAllowed" value="true" @(Model.InputMonitoringAllowed ? "checked" : "") /> Input Monitoring</label>
+                        <label class="checkbox-label"><input type="checkbox" name="ScreenCaptureAllowed" value="true" @(Model.ScreenCaptureAllowed ? "checked" : "") /> Screen Capture</label>
+                        <label class="checkbox-label"><input type="checkbox" name="LocationTrackingAllowed" value="true" @(Model.LocationTrackingAllowed ? "checked" : "") /> Location Tracking</label>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--secondary);">🔒 Controls</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="ScreenTimeAllowed" value="true" @(Model.ScreenTimeAllowed ? "checked" : "") /> Screen Time</label>
+                        <label class="checkbox-label"><input type="checkbox" name="AppBlockingAllowed" value="true" @(Model.AppBlockingAllowed ? "checked" : "") /> App Blocking</label>
+                        <label class="checkbox-label"><input type="checkbox" name="WebFilteringAllowed" value="true" @(Model.WebFilteringAllowed ? "checked" : "") /> Web Filtering</label>
+                        <label class="checkbox-label"><input type="checkbox" name="CategoryFilteringAllowed" value="true" @(Model.CategoryFilteringAllowed ? "checked" : "") /> Category Filtering</label>
+                    </div>
+                    
+                    <!-- Reporting -->
+                    <div>
+                        <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--secondary);">📈 Reporting & Alerts</h4>
+                        <label class="checkbox-label"><input type="checkbox" name="AlertsAllowed" value="true" @(Model.AlertsAllowed ? "checked" : "") /> Alerts</label>
+                        <label class="checkbox-label"><input type="checkbox" name="ReportingAllowed" value="true" @(Model.ReportingAllowed ? "checked" : "") /> Reporting</label>
+                        <label class="checkbox-label"><input type="checkbox" name="AppUsageReportsAllowed" value="true" @(Model.AppUsageReportsAllowed ? "checked" : "") /> App Usage Reports</label>
+                    </div>
+                </div>
+            </fieldset>
             
             <div class="actions" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -71,18 +158,52 @@
     </div>
 </div>
 
-<div class="card" style="max-width: 600px; margin-top: 1.5rem;">
-    <div class="card-header">
-        <h2>Plan Statistics</h2>
+<!-- Statistics & Stripe Info -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 800px; margin-top: 1.5rem;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Plan Statistics</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Active Subscribers:</strong> @Model.ActiveSubscriberCount</p>
+            <p><strong>Total Subscriptions:</strong> @Model.TotalSubscriberCount</p>
+            @if (Model.TotalSubscriberCount > 0 && !Model.IsActive)
+            {
+                <p style="color: var(--warning); font-size: 0.875rem;">
+                    ⚠️ This plan is retired but has @Model.ActiveSubscriberCount active grandfathered subscribers.
+                </p>
+            }
+        </div>
     </div>
-    <div class="card-body">
-        <p><strong>Active Subscribers:</strong> @Model.ActiveSubscriberCount</p>
-        <p><strong>Total Subscriptions:</strong> @Model.TotalSubscriberCount</p>
-        @if (Model.TotalSubscriberCount > 0)
-        {
-            <p style="color: var(--secondary); font-size: 0.875rem;">
-                ⚠️ This plan has active subscriptions. Changes will affect billing.
-            </p>
-        }
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>Stripe Integration</h2>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.StripeProductId))
+            {
+                <p><strong>Product ID:</strong> <code>@Model.StripeProductId</code></p>
+                @if (!string.IsNullOrEmpty(Model.StripeMonthlyPriceId))
+                {
+                    <p><strong>Monthly Price:</strong> <code>@Model.StripeMonthlyPriceId</code></p>
+                }
+                @if (!string.IsNullOrEmpty(Model.StripeYearlyPriceId))
+                {
+                    <p><strong>Yearly Price:</strong> <code>@Model.StripeYearlyPriceId</code></p>
+                }
+            }
+            else
+            {
+                <p style="color: var(--secondary);">Not synced with Stripe yet.</p>
+                <p style="font-size: 0.875rem;">Stripe integration will be configured in a future update.</p>
+            }
+        </div>
     </div>
 </div>
+
+<style>
+    .checkbox-label { display: block; margin-bottom: 0.5rem; cursor: pointer; }
+    .checkbox-label input[type="checkbox"] { margin-right: 0.5rem; }
+    .badge-secondary { background: var(--secondary, #6c757d); color: white; padding: 0.25em 0.5em; border-radius: 0.25rem; font-size: 0.75em; margin-left: 0.5rem; }
+</style>
