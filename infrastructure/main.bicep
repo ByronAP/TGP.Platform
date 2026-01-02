@@ -132,6 +132,10 @@ var commonEnvVars = [
     name: 'ServiceUrls__Reporting'
     value: 'https://tgp-reporting-${environmentName}.internal.${acaEnv.outputs.defaultDomain}'
   }
+  {
+    name: 'ServiceUrls__Api'
+    value: 'https://tgp-api-${environmentName}.${acaEnv.outputs.defaultDomain}'
+  }
 ]
 
 // 1. SSO Service (Auth)
@@ -224,6 +228,44 @@ module reporting 'modules/container-app.bicep' = {
     envVars: commonEnvVars
     containerPort: 8080
     isExternalIngress: false 
+    tags: tags
+  }
+  dependsOn: [keyVault]
+}
+
+// 6. Api Service (General API/Billing)
+module api 'modules/container-app.bicep' = {
+  name: 'apiDeployment'
+  params: {
+    location: location
+    containerAppName: 'tgp-api-${environmentName}'
+    environmentId: acaEnv.outputs.environmentId
+    containerImage: '${acr.outputs.loginServer}/tgp.microservices.api:latest'
+    registryServer: acr.outputs.loginServer
+    registryUsername: acr.outputs.registryUsername
+    registryPassword: acr.outputs.registryPassword
+    envVars: commonEnvVars
+    containerPort: 8080
+    isExternalIngress: true
+    tags: tags
+  }
+  dependsOn: [keyVault]
+}
+
+// 7. Admin Portal (Web App)
+module adminPortal 'modules/container-app.bicep' = {
+  name: 'adminPortalDeployment'
+  params: {
+    location: location
+    containerAppName: 'tgp-admin-${environmentName}'
+    environmentId: acaEnv.outputs.environmentId
+    containerImage: '${acr.outputs.loginServer}/tgp.adminportal:latest'
+    registryServer: acr.outputs.loginServer
+    registryUsername: acr.outputs.registryUsername
+    registryPassword: acr.outputs.registryPassword
+    envVars: commonEnvVars
+    containerPort: 8080
+    isExternalIngress: true
     tags: tags
   }
   dependsOn: [keyVault]
