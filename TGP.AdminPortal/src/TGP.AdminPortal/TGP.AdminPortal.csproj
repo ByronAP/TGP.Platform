@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\TGP.Data\src\TGP.Data\TGP.Data.csproj" />
+    <ProjectReference Include="..\..\src\TGP.Data\src\TGP.Data\TGP.Data.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
