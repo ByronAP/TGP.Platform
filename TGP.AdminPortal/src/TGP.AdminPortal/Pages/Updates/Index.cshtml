@@ -1,0 +1,73 @@
+@page
+@model TGP.AdminPortal.Pages.Updates.IndexModel
+@{
+    ViewData["Title"] = "Client Updates";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3>Client Software Versions</h3>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Version</th>
+                    <th>Released Date</th>
+                    <th>Status</th>
+                    <th>GitHub Release</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var version in Model.Versions)
+                {
+                    <tr>
+                        <td>
+                            @switch (version.Platform.ToLower())
+                            {
+                                case "windows": <span title="Windows">🪟 Windows</span> break;
+                                case "macos": <span title="MacOS">🍎 MacOS</span> break;
+                                case "linux": <span title="Linux">🐧 Linux</span> break;
+                                default: @version.Platform break;
+                            }
+                        </td>
+                        <td>@version.Version</td>
+                        <td>@version.ReleaseDate.ToString("g")</td>
+                        <td>
+                            @if (version.IsReleased)
+                            {
+                                <span class="badge badge-success">Released</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning">Pending</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(version.GitHubReleaseId))
+                            {
+                                <span class="text-muted">ID: @version.GitHubReleaseId</span>
+                            }
+                        </td>
+                        <td>
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="ReleaseId" value="@version.Id" />
+                                @if (!version.IsReleased)
+                                {
+                                    <button type="submit" asp-page-handler="Release" class="btn btn-sm btn-primary">Release</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" asp-page-handler="Unrelease" class="btn btn-sm btn-warning">Un-release</button>
+                                }
+                                <button type="submit" asp-page-handler="Delete" class="btn btn-sm btn-danger ml-2" onclick="return confirm('Are you sure you want to delete this version?');">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

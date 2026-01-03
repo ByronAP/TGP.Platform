@@ -119,6 +119,14 @@ builder.Services.AddHttpClient("Gateway", client =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<TgpDbContext>("database");
 
+// Service Bus
+var sbConnectionString = builder.Configuration["ServiceBus:ConnectionString"];
+if (!string.IsNullOrEmpty(sbConnectionString))
+{
+    builder.Services.AddSingleton(new Azure.Messaging.ServiceBus.ServiceBusClient(sbConnectionString));
+}
+
+
 var app = builder.Build();
 
 // Verify database connectivity at startup
