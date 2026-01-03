@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TGP.Data;
@@ -46,6 +47,8 @@ public class IndexModel : PageModel
                 DeviceCount = t.Devices.Count,
                 HasActiveSubscription = activeSub != null,
                 PlanName = activeSub?.Plan?.Name ?? "",
+                Status = t.Status,
+                StatusReason = t.StatusReason,
                 CreatedAt = t.CreatedAt
             };
         }).ToList();
@@ -60,6 +63,38 @@ public class IndexModel : PageModel
         public int DeviceCount { get; set; }
         public bool HasActiveSubscription { get; set; }
         public string PlanName { get; set; } = "";
+        public string Status { get; set; } = "";
+        public string? StatusReason { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    [BindProperty]
+    public Guid TenantId { get; set; }
+
+    [BindProperty]
+    public string NewStatus { get; set; } = "";
+
+    [BindProperty]
+    public string? Reason { get; set; }
+
+    public async Task<IActionResult> OnPostUpdateStatusAsync()
+    {
+        var tenant = await _context.Tenants.FindAsync(TenantId);
+        if (tenant == null) return NotFound();
+
+        // Validate status
+        if (NewStatus != TGP.Data.Entities.Tenant.StatusActive &&
+            NewStatus != TGP.Data.Entities.Tenant.StatusOnHold &&
+            NewStatus != TGP.Data.Entities.Tenant.StatusBanned) // SoftDeleted is handled separately usually
+        {
+            return BadRequest("Invalid status");
+        }
+
+        tenant.Status = NewStatus;
+        tenant.StatusReason = Reason;
+        tenant.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return RedirectToPage();
     }
 }

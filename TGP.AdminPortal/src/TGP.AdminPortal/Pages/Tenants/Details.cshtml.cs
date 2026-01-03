@@ -13,6 +13,8 @@ public class DetailsModel : PageModel
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
     public string OwnerEmail { get; set; } = "";
+    public string Status { get; set; } = "";
+    public string? StatusReason { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public SubscriptionInfo? Subscription { get; set; }
@@ -46,6 +48,8 @@ public class DetailsModel : PageModel
         Id = tenant.Id;
         Name = tenant.Name;
         OwnerEmail = tenant.Owner?.Email ?? "Unknown";
+        Status = tenant.Status;
+        StatusReason = tenant.StatusReason;
         CreatedAt = tenant.CreatedAt;
         UpdatedAt = tenant.UpdatedAt;
 
@@ -97,5 +101,33 @@ public class DetailsModel : PageModel
         public string Name { get; set; } = "";
         public string DeviceType { get; set; } = "";
         public DateTime? LastHeartbeat { get; set; }
+    }
+    [BindProperty]
+    public string NewStatus { get; set; } = "";
+
+    [BindProperty]
+    public string? Reason { get; set; }
+
+    public async Task<IActionResult> OnPostUpdateStatusAsync(Guid id)
+    {
+        var tenant = await _context.Tenants.FindAsync(id);
+        if (tenant == null) return NotFound();
+
+        // Validate status
+        if (NewStatus != TGP.Data.Entities.Tenant.StatusActive &&
+            NewStatus != TGP.Data.Entities.Tenant.StatusOnHold &&
+            NewStatus != TGP.Data.Entities.Tenant.StatusBanned)
+        {
+            return BadRequest("Invalid status");
+        }
+
+        tenant.Status = NewStatus;
+        tenant.StatusReason = Reason;
+        tenant.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        
+        // Refresh properties for the page
+        return RedirectToPage(new { id });
     }
 }

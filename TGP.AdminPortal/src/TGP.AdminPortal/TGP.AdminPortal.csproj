@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-    <PackageReference Include="TGP.Data" Version="*-*" />
+    <ProjectReference Include="..\..\..\TGP.Data\src\TGP.Data\TGP.Data.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
