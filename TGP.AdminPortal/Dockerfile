@@ -6,19 +6,17 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG GH_TOKEN
 WORKDIR /src
 
-# Register GitHub Packages (if needed for shared libs)
+# Register GitHub Packages for TGP.Data NuGet package
 RUN dotnet nuget add source "https://nuget.pkg.github.com/ByronAP/index.json" -n "github" -u "ByronAP" -p "${GH_TOKEN}" --store-password-in-clear-text
 
-# Copy csproj files first for better layer caching
-COPY src/TGP.Data/src/TGP.Data/TGP.Data.csproj src/TGP.Data/src/TGP.Data/
+# Copy csproj and nuget.config for restore
+COPY nuget.config ./
 COPY src/TGP.AdminPortal/TGP.AdminPortal.csproj src/TGP.AdminPortal/
 
-# Restore dependencies
-RUN dotnet restore src/TGP.Data/src/TGP.Data/TGP.Data.csproj
+# Restore dependencies (TGP.Data comes from NuGet)
 RUN dotnet restore src/TGP.AdminPortal/TGP.AdminPortal.csproj
 
-# Copy project files
-COPY src/TGP.Data/ src/TGP.Data/
+# Copy project source files
 COPY src/TGP.AdminPortal/ src/TGP.AdminPortal/
 
 # Build the application
