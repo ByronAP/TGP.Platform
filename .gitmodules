@@ -19,9 +19,6 @@
 [submodule "TGP.DbMigrator"]
 	path = TGP.DbMigrator
 	url = https://github.com/ByronAP/TGP.DbMigrator.git
-[submodule "TGP.AdminPortal/src/TGP.Data"]
-	path = TGP.AdminPortal/src/TGP.Data
-	url = https://github.com/ByronAP/TGP.Data.git
 [submodule "TGP.Microservices.Api"]
 	path = TGP.Microservices.Api
 	url = https://github.com/ByronAP/TGP.Microservices.Api.git

@@ -26,6 +26,9 @@ public class CreateModel : PageModel
     public int MaxDevices { get; set; } = 10;
 
     [BindProperty]
+    public decimal MaxTotalStorageGB { get; set; } = 5;
+
+    [BindProperty]
     public string? StripePriceId { get; set; }
 
     public string? ErrorMessage { get; set; }
@@ -70,7 +73,8 @@ public class CreateModel : PageModel
                 Price = Price,
                 Currency = "USD",
                 Interval = Interval == "Year" ? PlanInterval.Year : PlanInterval.Month,
-                MaxDevices = MaxDevices
+                MaxDevices = MaxDevices,
+                MaxTotalStorageBytes = (long)(MaxTotalStorageGB * 1_073_741_824)
             };
 
             _context.Plans.Add(plan);

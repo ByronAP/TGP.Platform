@@ -40,6 +40,9 @@ public class EditModel : PageModel
     [BindProperty]
     public int DataRetentionDays { get; set; }
 
+    [BindProperty]
+    public decimal MaxTotalStorageGB { get; set; }
+
     // Trial
     [BindProperty]
     public int? TrialDays { get; set; }
@@ -157,6 +160,7 @@ public class EditModel : PageModel
             plan.MaxDevices = MaxDevices;
             plan.MaxProfiles = MaxProfiles;
             plan.DataRetentionDays = DataRetentionDays;
+            plan.MaxTotalStorageBytes = (long)(MaxTotalStorageGB * 1_073_741_824); // GB to bytes
             plan.TrialDays = TrialDays;
             
             // Availability
@@ -215,6 +219,7 @@ public class EditModel : PageModel
         MaxDevices = plan.MaxDevices;
         MaxProfiles = plan.MaxProfiles;
         DataRetentionDays = plan.DataRetentionDays;
+        MaxTotalStorageGB = Math.Round((decimal)plan.MaxTotalStorageBytes / 1_073_741_824, 2); // bytes to GB
         TrialDays = plan.TrialDays;
         
         // Availability

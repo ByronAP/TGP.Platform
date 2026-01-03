@@ -95,7 +95,7 @@
             <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
                 <legend style="padding: 0 0.5rem; font-weight: 600;">Limits</legend>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label for="maxDevices">Max Devices *</label>
                         <input type="number" id="maxDevices" name="MaxDevices" class="form-control" 
@@ -112,6 +112,12 @@
                         <label for="dataRetentionDays">Data Retention (Days) *</label>
                         <input type="number" id="dataRetentionDays" name="DataRetentionDays" class="form-control" 
                                value="@Model.DataRetentionDays" min="1" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxTotalStorageGB">Max Storage (GB) *</label>
+                        <input type="number" id="maxTotalStorageGB" name="MaxTotalStorageGB" class="form-control" 
+                               value="@Model.MaxTotalStorageGB" step="0.01" min="0.01" required />
                     </div>
                 </div>
             </fieldset>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\TGP.Data\src\TGP.Data\TGP.Data.csproj" />
+    <PackageReference Include="TGP.Data" Version="*-*" />
   </ItemGroup>
 
   <PropertyGroup>
