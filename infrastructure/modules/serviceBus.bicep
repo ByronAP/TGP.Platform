@@ -13,6 +13,22 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2022-10-01-preview' = {
   properties: {}
 }
 
+resource clientUpdatesTopic 'Microsoft.ServiceBus/namespaces/topics@2022-10-01-preview' = {
+  parent: serviceBus
+  name: 'client-updates'
+  properties: {}
+}
+
+resource deviceGatewaySubscription 'Microsoft.ServiceBus/namespaces/topics/subscriptions@2022-10-01-preview' = {
+  parent: clientUpdatesTopic
+  name: 'device-gateway'
+  properties: {
+    maxDeliveryCount: 10
+    deadLetteringOnFilterEvaluationExceptions: true
+    deadLetteringOnMessageExpiration: true
+  }
+}
+
 output endpoint string = serviceBus.properties.serviceBusEndpoint
 output namespaceName string = serviceBus.name
 #disable-next-line use-resource-id-functions // Suppress warning about manual ID construction if needed, or just use listKeys on the resource

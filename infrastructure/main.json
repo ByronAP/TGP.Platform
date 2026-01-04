@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "13486353728570838268"
+      "templateHash": "14122762016274083589"
     }
   },
   "parameters": {
@@ -52,7 +52,17 @@
       "Environment": "[parameters('environmentName')]",
       "Project": "TGP",
       "ManagedBy": "Bicep"
-    }
+    },
+    "secretEnvVars": [
+      {
+        "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+        "secretName": "APPLICATIONINSIGHTS--CONNECTIONSTRING"
+      },
+      {
+        "name": "Redis__ConnectionString",
+        "secretName": "Redis--ConnectionString"
+      }
+    ]
   },
   "resources": [
     {
@@ -535,7 +545,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "13399789339184365066"
+              "templateHash": "12448119032634124463"
             }
           },
           "parameters": {
@@ -561,6 +571,28 @@
                 "tier": "Standard"
               },
               "properties": {}
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}', parameters('namespaceName'), 'client-updates')]",
+              "properties": {},
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('namespaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.ServiceBus/namespaces/topics/subscriptions",
+              "apiVersion": "2022-10-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('namespaceName'), 'client-updates', 'device-gateway')]",
+              "properties": {
+                "maxDeliveryCount": 10,
+                "deadLetteringOnFilterEvaluationExceptions": true,
+                "deadLetteringOnMessageExpiration": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('namespaceName'), 'client-updates')]"
+              ]
             }
           ],
           "outputs": {
@@ -607,7 +639,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "9752506493077193101"
+              "templateHash": "17056815034411038346"
             }
           },
           "parameters": {
@@ -634,7 +666,9 @@
               "kind": "StorageV2",
               "properties": {
                 "accessTier": "Hot",
-                "allowBlobPublicAccess": false
+                "allowBlobPublicAccess": false,
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2"
               }
             }
           ],
@@ -982,6 +1016,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -999,7 +1039,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1038,7 +1078,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -1071,19 +1146,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -1102,6 +1172,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -1171,6 +1245,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -1188,7 +1268,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1227,7 +1307,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -1260,19 +1375,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -1291,6 +1401,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -1360,6 +1474,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -1377,7 +1497,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1416,7 +1536,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -1449,19 +1604,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -1480,6 +1630,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -1549,6 +1703,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -1566,7 +1726,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1605,7 +1765,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -1638,19 +1833,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -1669,6 +1859,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -1738,6 +1932,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -1755,7 +1955,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1794,7 +1994,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -1827,19 +2062,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -1858,6 +2088,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -1927,6 +2161,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -1944,7 +2184,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -1983,7 +2223,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -2016,19 +2291,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -2047,6 +2317,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -2116,6 +2390,12 @@
               }
             ]
           },
+          "secretEnvVars": {
+            "value": "[variables('secretEnvVars')]"
+          },
+          "keyVaultName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
+          },
           "containerPort": {
             "value": 8080
           },
@@ -2133,7 +2413,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17083835857493470991"
+              "templateHash": "5241340219932374352"
             }
           },
           "parameters": {
@@ -2172,7 +2452,42 @@
             },
             "tags": {
               "type": "object"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "defaultValue": ""
+            },
+            "secretEnvVars": {
+              "type": "array",
+              "defaultValue": []
             }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "keyVaultSecrets",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName]",
+                  "keyVaultUrl": "[format('https://{0}{1}/secrets/{2}', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('secretEnvVars')[copyIndex('keyVaultSecrets')].secretName)]",
+                  "identity": "system"
+                }
+              },
+              {
+                "name": "secretRefEnvVars",
+                "count": "[length(parameters('secretEnvVars'))]",
+                "input": {
+                  "name": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].name]",
+                  "secretRef": "[parameters('secretEnvVars')[copyIndex('secretRefEnvVars')].secretName]"
+                }
+              }
+            ],
+            "registrySecret": [
+              {
+                "name": "registry-password",
+                "value": "[parameters('registryPassword')]"
+              }
+            ]
           },
           "resources": [
             {
@@ -2205,19 +2520,14 @@
                       "passwordSecretRef": "registry-password"
                     }
                   ],
-                  "secrets": [
-                    {
-                      "name": "registry-password",
-                      "value": "[parameters('registryPassword')]"
-                    }
-                  ]
+                  "secrets": "[concat(variables('registrySecret'), variables('keyVaultSecrets'))]"
                 },
                 "template": {
                   "containers": [
                     {
                       "name": "[parameters('containerAppName')]",
                       "image": "[parameters('containerImage')]",
-                      "env": "[parameters('envVars')]",
+                      "env": "[concat(parameters('envVars'), variables('secretRefEnvVars'))]",
                       "resources": {
                         "cpu": "[json('0.25')]",
                         "memory": "0.5Gi"
@@ -2236,6 +2546,10 @@
             "fqdn": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
