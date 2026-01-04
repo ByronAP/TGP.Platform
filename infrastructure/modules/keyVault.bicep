@@ -130,6 +130,11 @@ resource appInsightsConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@20
   }
 }
 
+// NOTE: The 'appinsights-client-ingestion' secret is created by the 
+// create_client_telemetry_key.ps1 script using Azure CLI.
+// This creates an ingestion-only API key that is safe for client applications.
+// The API key can only write telemetry, not read or query it.
+
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output keyVaultId string = keyVault.id
