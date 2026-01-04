@@ -48,6 +48,17 @@ module acaEnv 'modules/containerAppsEnv.bicep' = {
   }
 }
 
+// Module: Application Insights
+module appInsights 'modules/appInsights.bicep' = {
+  name: 'appInsightsDeployment'
+  params: {
+    location: location
+    appInsightsName: 'tgp-ai-${environmentName}-${resourceSuffix}'
+    logAnalyticsWorkspaceId: acaEnv.outputs.logAnalyticsId
+    tags: tags
+  }
+}
+
 // Module: Azure SQL Database
 module sql 'modules/sql.bicep' = {
   name: 'sqlDeployment'
@@ -103,6 +114,7 @@ module keyVault 'modules/keyVault.bicep' = {
     redisConnectionString: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
     serviceBusConnectionString: 'Endpoint=${serviceBus.outputs.endpoint};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=${serviceBus.outputs.primaryKey}'
     storageConnectionString: 'DefaultEndpointsProtocol=https;AccountName=${storage.outputs.storageAccountName};AccountKey=${storage.outputs.storageKey};EndpointSuffix=${environment().suffixes.storage}'
+    appInsightsConnectionString: appInsights.outputs.connectionString
   }
 }
 

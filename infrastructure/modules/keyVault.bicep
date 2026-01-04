@@ -40,6 +40,10 @@ param serviceBusConnectionString string
 @description('Storage connection string')
 param storageConnectionString string
 
+@secure()
+@description('Application Insights connection string')
+param appInsightsConnectionString string
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -115,6 +119,14 @@ resource storageConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-0
   name: 'Storage--ConnectionString'
   properties: {
     value: storageConnectionString
+  }
+}
+
+resource appInsightsConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'APPLICATIONINSIGHTS--CONNECTIONSTRING' // Standard key for OTel/AppInsights
+  properties: {
+    value: appInsightsConnectionString
   }
 }
 

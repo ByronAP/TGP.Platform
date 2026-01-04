@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "13664282633930919552"
+      "templateHash": "13486353728570838268"
     }
   },
   "parameters": {
@@ -37,7 +37,13 @@
     "dbPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "The administrator password for the PostgreSQL server"
+        "description": "The administrator password for the SQL server"
+      }
+    },
+    "jwtSecretKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The JWT signing secret key (min 32 characters)"
       }
     }
   },
@@ -156,7 +162,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "17223656840476519519"
+              "templateHash": "12923617959874274965"
             }
           },
           "parameters": {
@@ -212,10 +218,98 @@
             "environmentId": {
               "type": "string",
               "value": "[resourceId('Microsoft.App/managedEnvironments', parameters('environmentName'))]"
+            },
+            "defaultDomain": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/managedEnvironments', parameters('environmentName')), '2023-05-01').defaultDomain]"
+            },
+            "logAnalyticsId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
             }
           }
         }
       }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "appInsightsDeployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "appInsightsName": {
+            "value": "[format('tgp-ai-{0}-{1}', parameters('environmentName'), parameters('resourceSuffix'))]"
+          },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.logAnalyticsId.value]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "15998175534727052078"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "appInsightsName": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            },
+            "logAnalyticsWorkspaceId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('logAnalyticsWorkspaceId')]",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "instrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            },
+            "connectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]"
+      ]
     },
     {
       "type": "Microsoft.Resources/deployments",
@@ -564,6 +658,274 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
+      "name": "keyVaultDeployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "keyVaultName": {
+            "value": "[format('tgpkv{0}{1}', parameters('environmentName'), take(parameters('resourceSuffix'), 10))]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "jwtSecretKey": {
+            "value": "[parameters('jwtSecretKey')]"
+          },
+          "dbConnectionString": {
+            "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
+          },
+          "redisConnectionString": {
+            "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
+          },
+          "serviceBusConnectionString": {
+            "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
+          },
+          "storageConnectionString": {
+            "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'appInsightsDeployment'), '2025-04-01').outputs.connectionString.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "12230711047023180723"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Location for the Key Vault"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Key Vault"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "enableSoftDelete": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable soft delete for the Key Vault"
+              }
+            },
+            "softDeleteRetentionInDays": {
+              "type": "int",
+              "defaultValue": 90,
+              "metadata": {
+                "description": "Number of days to retain deleted vaults"
+              }
+            },
+            "jwtSecretKey": {
+              "type": "securestring",
+              "metadata": {
+                "description": "JWT signing secret key"
+              }
+            },
+            "jwtIssuer": {
+              "type": "string",
+              "defaultValue": "TGP.SSO",
+              "metadata": {
+                "description": "JWT token issuer"
+              }
+            },
+            "jwtAudience": {
+              "type": "string",
+              "defaultValue": "TGP.Platform",
+              "metadata": {
+                "description": "JWT token audience"
+              }
+            },
+            "dbConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "SQL Server connection string"
+              }
+            },
+            "redisConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Redis connection string"
+              }
+            },
+            "serviceBusConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Service Bus connection string"
+              }
+            },
+            "storageConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Storage connection string"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Application Insights connection string"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": true,
+                "enabledForDiskEncryption": false,
+                "enableSoftDelete": "[parameters('enableSoftDelete')]",
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                "enableRbacAuthorization": true,
+                "publicNetworkAccess": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'Jwt--SecretKey')]",
+              "properties": {
+                "value": "[parameters('jwtSecretKey')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'Jwt--Issuer')]",
+              "properties": {
+                "value": "[parameters('jwtIssuer')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'Jwt--Audience')]",
+              "properties": {
+                "value": "[parameters('jwtAudience')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'ConnectionStrings--DefaultConnection')]",
+              "properties": {
+                "value": "[parameters('dbConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'Redis--ConnectionString')]",
+              "properties": {
+                "value": "[parameters('redisConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'ServiceBus--ConnectionString')]",
+              "properties": {
+                "value": "[parameters('serviceBusConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'Storage--ConnectionString')]",
+              "properties": {
+                "value": "[parameters('storageConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'APPLICATIONINSIGHTS--CONNECTIONSTRING')]",
+              "properties": {
+                "value": "[parameters('appInsightsConnectionString')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "keyVaultName": {
+              "type": "string",
+              "value": "[parameters('keyVaultName')]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri]"
+            },
+            "keyVaultId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'appInsightsDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
       "name": "ssoDeployment",
       "properties": {
         "expressionEvaluationOptions": {
@@ -595,28 +957,28 @@
           "envVars": {
             "value": [
               {
-                "name": "ConnectionStrings__DefaultConnection",
-                "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
-              },
-              {
-                "name": "ConnectionStrings__Redis",
-                "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "ServiceBus__ConnectionString",
-                "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "Storage__ConnectionString",
-                "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
-              },
-              {
-                "name": "Jwt__SecretKey",
-                "value": "TgpSecretKey!2025_MustBeVeryLongToSatisfySecurityRequirements"
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
               },
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
                 "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
               }
             ]
           },
@@ -637,7 +999,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "8656534067394868162"
+              "templateHash": "17083835857493470991"
             }
           },
           "parameters": {
@@ -685,6 +1047,9 @@
               "name": "[parameters('containerAppName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "managedEnvironmentId": "[parameters('environmentId')]",
                 "configuration": {
@@ -726,7 +1091,7 @@
                     }
                   ],
                   "scale": {
-                    "minReplicas": 0,
+                    "minReplicas": 1,
                     "maxReplicas": 10
                   }
                 }
@@ -744,10 +1109,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
         "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     },
     {
@@ -784,28 +1146,28 @@
           "envVars": {
             "value": [
               {
-                "name": "ConnectionStrings__DefaultConnection",
-                "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
-              },
-              {
-                "name": "ConnectionStrings__Redis",
-                "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "ServiceBus__ConnectionString",
-                "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "Storage__ConnectionString",
-                "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
-              },
-              {
-                "name": "Jwt__SecretKey",
-                "value": "TgpSecretKey!2025_MustBeVeryLongToSatisfySecurityRequirements"
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
               },
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
                 "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
               }
             ]
           },
@@ -826,7 +1188,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "8656534067394868162"
+              "templateHash": "17083835857493470991"
             }
           },
           "parameters": {
@@ -874,6 +1236,9 @@
               "name": "[parameters('containerAppName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "managedEnvironmentId": "[parameters('environmentId')]",
                 "configuration": {
@@ -915,7 +1280,7 @@
                     }
                   ],
                   "scale": {
-                    "minReplicas": 0,
+                    "minReplicas": 1,
                     "maxReplicas": 10
                   }
                 }
@@ -933,10 +1298,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
         "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     },
     {
@@ -973,28 +1335,28 @@
           "envVars": {
             "value": [
               {
-                "name": "ConnectionStrings__DefaultConnection",
-                "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
-              },
-              {
-                "name": "ConnectionStrings__Redis",
-                "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "ServiceBus__ConnectionString",
-                "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "Storage__ConnectionString",
-                "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
-              },
-              {
-                "name": "Jwt__SecretKey",
-                "value": "TgpSecretKey!2025_MustBeVeryLongToSatisfySecurityRequirements"
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
               },
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
                 "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
               }
             ]
           },
@@ -1015,7 +1377,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "8656534067394868162"
+              "templateHash": "17083835857493470991"
             }
           },
           "parameters": {
@@ -1063,6 +1425,9 @@
               "name": "[parameters('containerAppName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "managedEnvironmentId": "[parameters('environmentId')]",
                 "configuration": {
@@ -1104,7 +1469,7 @@
                     }
                   ],
                   "scale": {
-                    "minReplicas": 0,
+                    "minReplicas": 1,
                     "maxReplicas": 10
                   }
                 }
@@ -1122,10 +1487,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
         "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     },
     {
@@ -1162,28 +1524,28 @@
           "envVars": {
             "value": [
               {
-                "name": "ConnectionStrings__DefaultConnection",
-                "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
-              },
-              {
-                "name": "ConnectionStrings__Redis",
-                "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "ServiceBus__ConnectionString",
-                "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "Storage__ConnectionString",
-                "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
-              },
-              {
-                "name": "Jwt__SecretKey",
-                "value": "TgpSecretKey!2025_MustBeVeryLongToSatisfySecurityRequirements"
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
               },
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
                 "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
               }
             ]
           },
@@ -1204,7 +1566,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "8656534067394868162"
+              "templateHash": "17083835857493470991"
             }
           },
           "parameters": {
@@ -1252,6 +1614,9 @@
               "name": "[parameters('containerAppName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "managedEnvironmentId": "[parameters('environmentId')]",
                 "configuration": {
@@ -1293,7 +1658,7 @@
                     }
                   ],
                   "scale": {
-                    "minReplicas": 0,
+                    "minReplicas": 1,
                     "maxReplicas": 10
                   }
                 }
@@ -1311,10 +1676,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
         "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     },
     {
@@ -1351,28 +1713,28 @@
           "envVars": {
             "value": [
               {
-                "name": "ConnectionStrings__DefaultConnection",
-                "value": "[format('Server={0};Database={1};User Id=tgpadmin;Password={2};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;', reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.fqdn.value, reference(resourceId('Microsoft.Resources/deployments', 'sqlDeployment'), '2025-04-01').outputs.databaseName.value, parameters('dbPassword'))]"
-              },
-              {
-                "name": "ConnectionStrings__Redis",
-                "value": "[format('{0}:6380,password={1},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.hostName.value, reference(resourceId('Microsoft.Resources/deployments', 'redisDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "ServiceBus__ConnectionString",
-                "value": "[format('Endpoint={0};SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={1}', reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.endpoint.value, reference(resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment'), '2025-04-01').outputs.primaryKey.value)]"
-              },
-              {
-                "name": "Storage__ConnectionString",
-                "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value, reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageKey.value, environment().suffixes.storage)]"
-              },
-              {
-                "name": "Jwt__SecretKey",
-                "value": "TgpSecretKey!2025_MustBeVeryLongToSatisfySecurityRequirements"
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
               },
               {
                 "name": "ASPNETCORE_ENVIRONMENT",
                 "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
               }
             ]
           },
@@ -1393,7 +1755,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.39.26.7824",
-              "templateHash": "8656534067394868162"
+              "templateHash": "17083835857493470991"
             }
           },
           "parameters": {
@@ -1441,6 +1803,9 @@
               "name": "[parameters('containerAppName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
                 "managedEnvironmentId": "[parameters('environmentId')]",
                 "configuration": {
@@ -1482,7 +1847,7 @@
                     }
                   ],
                   "scale": {
-                    "minReplicas": 0,
+                    "minReplicas": 1,
                     "maxReplicas": 10
                   }
                 }
@@ -1500,10 +1865,385 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
         "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'redisDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'serviceBusDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'sqlDeployment')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storageDeployment')]"
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "apiDeployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "containerAppName": {
+            "value": "[format('tgp-api-{0}', parameters('environmentName'))]"
+          },
+          "environmentId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.environmentId.value]"
+          },
+          "containerImage": {
+            "value": "[format('{0}/tgp.microservices.api:latest', reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.loginServer.value)]"
+          },
+          "registryServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.loginServer.value]"
+          },
+          "registryUsername": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.registryUsername.value]"
+          },
+          "registryPassword": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.registryPassword.value]"
+          },
+          "envVars": {
+            "value": [
+              {
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
+              },
+              {
+                "name": "ASPNETCORE_ENVIRONMENT",
+                "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              }
+            ]
+          },
+          "containerPort": {
+            "value": 8080
+          },
+          "isExternalIngress": {
+            "value": true
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "17083835857493470991"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "containerAppName": {
+              "type": "string"
+            },
+            "environmentId": {
+              "type": "string"
+            },
+            "containerImage": {
+              "type": "string"
+            },
+            "envVars": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "containerPort": {
+              "type": "int",
+              "defaultValue": 80
+            },
+            "isExternalIngress": {
+              "type": "bool",
+              "defaultValue": false
+            },
+            "registryServer": {
+              "type": "string"
+            },
+            "registryUsername": {
+              "type": "securestring"
+            },
+            "registryPassword": {
+              "type": "securestring"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('containerAppName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('environmentId')]",
+                "configuration": {
+                  "ingress": {
+                    "external": "[parameters('isExternalIngress')]",
+                    "targetPort": "[parameters('containerPort')]",
+                    "transport": "auto",
+                    "traffic": [
+                      {
+                        "latestRevision": true,
+                        "weight": 100
+                      }
+                    ]
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('registryServer')]",
+                      "username": "[parameters('registryUsername')]",
+                      "passwordSecretRef": "registry-password"
+                    }
+                  ],
+                  "secrets": [
+                    {
+                      "name": "registry-password",
+                      "value": "[parameters('registryPassword')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "[parameters('containerAppName')]",
+                      "image": "[parameters('containerImage')]",
+                      "env": "[parameters('envVars')]",
+                      "resources": {
+                        "cpu": "[json('0.25')]",
+                        "memory": "0.5Gi"
+                      }
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": 1,
+                    "maxReplicas": 10
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "fqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "adminPortalDeployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "containerAppName": {
+            "value": "[format('tgp-admin-{0}', parameters('environmentName'))]"
+          },
+          "environmentId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.environmentId.value]"
+          },
+          "containerImage": {
+            "value": "[format('{0}/tgp.adminportal:latest', reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.loginServer.value)]"
+          },
+          "registryServer": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.loginServer.value]"
+          },
+          "registryUsername": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.registryUsername.value]"
+          },
+          "registryPassword": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'acrDeployment'), '2025-04-01').outputs.registryPassword.value]"
+          },
+          "envVars": {
+            "value": [
+              {
+                "name": "KeyVault__Uri",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
+              },
+              {
+                "name": "ASPNETCORE_ENVIRONMENT",
+                "value": "Production"
+              },
+              {
+                "name": "ServiceUrls__Sso",
+                "value": "[format('https://tgp-sso-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Gateway",
+                "value": "[format('https://tgp-gateway-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Reporting",
+                "value": "[format('https://tgp-reporting-{0}.internal.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              },
+              {
+                "name": "ServiceUrls__Api",
+                "value": "[format('https://tgp-api-{0}.{1}', parameters('environmentName'), reference(resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment'), '2025-04-01').outputs.defaultDomain.value)]"
+              }
+            ]
+          },
+          "containerPort": {
+            "value": 8080
+          },
+          "isExternalIngress": {
+            "value": true
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "17083835857493470991"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "containerAppName": {
+              "type": "string"
+            },
+            "environmentId": {
+              "type": "string"
+            },
+            "containerImage": {
+              "type": "string"
+            },
+            "envVars": {
+              "type": "array",
+              "defaultValue": []
+            },
+            "containerPort": {
+              "type": "int",
+              "defaultValue": 80
+            },
+            "isExternalIngress": {
+              "type": "bool",
+              "defaultValue": false
+            },
+            "registryServer": {
+              "type": "string"
+            },
+            "registryUsername": {
+              "type": "securestring"
+            },
+            "registryPassword": {
+              "type": "securestring"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('containerAppName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "managedEnvironmentId": "[parameters('environmentId')]",
+                "configuration": {
+                  "ingress": {
+                    "external": "[parameters('isExternalIngress')]",
+                    "targetPort": "[parameters('containerPort')]",
+                    "transport": "auto",
+                    "traffic": [
+                      {
+                        "latestRevision": true,
+                        "weight": 100
+                      }
+                    ]
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('registryServer')]",
+                      "username": "[parameters('registryUsername')]",
+                      "passwordSecretRef": "registry-password"
+                    }
+                  ],
+                  "secrets": [
+                    {
+                      "name": "registry-password",
+                      "value": "[parameters('registryPassword')]"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "[parameters('containerAppName')]",
+                      "image": "[parameters('containerImage')]",
+                      "env": "[parameters('envVars')]",
+                      "resources": {
+                        "cpu": "[json('0.25')]",
+                        "memory": "0.5Gi"
+                      }
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": 1,
+                    "maxReplicas": 10
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "fqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('containerAppName')), '2023-05-01').configuration.ingress.fqdn]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'acaEnvDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'acrDeployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment')]"
       ]
     }
   ],
@@ -1531,6 +2271,14 @@
     "storageAccountName": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storageDeployment'), '2025-04-01').outputs.storageAccountName.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultUri.value]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVaultDeployment'), '2025-04-01').outputs.keyVaultName.value]"
     }
   }
 }

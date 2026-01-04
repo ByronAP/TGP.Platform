@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -18,6 +19,12 @@ if (!string.IsNullOrEmpty(keyVaultUri))
         new Uri(keyVaultUri),
         new DefaultAzureCredential());
 }
+
+// ============================================
+// OpenTelemetry
+// ============================================
+builder.Services.AddOpenTelemetry().UseAzureMonitor();
+
 
 // Add Razor Pages
 builder.Services.AddRazorPages(options =>
