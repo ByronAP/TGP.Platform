@@ -148,6 +148,10 @@ var commonEnvVars = [
     name: 'ServiceUrls__Api'
     value: 'https://tgp-api-${environmentName}.${acaEnv.outputs.defaultDomain}'
   }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsights.outputs.connectionString
+  }
 ]
 
 // 1. SSO Service (Auth)
