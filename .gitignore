@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 infrastructure/deployment_secrets.md
 infrastructure/deployment_secrets.md
+
+# Ignored Nested Repositories
+TGP.Client.Windows/
