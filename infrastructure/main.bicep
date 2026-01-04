@@ -152,6 +152,10 @@ var commonEnvVars = [
     name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
     value: appInsights.outputs.connectionString
   }
+  {
+    name: 'Redis__ConnectionString'
+    value: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
+  }
 ]
 
 // 1. SSO Service (Auth)
