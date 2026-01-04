@@ -12,6 +12,30 @@ param registryUsername string
 param registryPassword string
 param tags object
 
+// Key Vault secret references
+param keyVaultName string = ''
+param secretEnvVars array = []  // [{name: 'ENV_VAR_NAME', secretName: 'kv-secret-name'}]
+
+// Build secrets array: registry password + Key Vault references
+var registrySecret = [
+  {
+    name: 'registry-password'
+    value: registryPassword
+  }
+]
+
+var keyVaultSecrets = [for secret in secretEnvVars: {
+  name: secret.secretName
+  keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/${secret.secretName}'
+  identity: 'system'
+}]
+
+// Build env vars: regular + secret references
+var secretRefEnvVars = [for secret in secretEnvVars: {
+  name: secret.name
+  secretRef: secret.secretName
+}]
+
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: containerAppName
   location: location
@@ -40,19 +64,14 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           passwordSecretRef: 'registry-password'
         }
       ]
-      secrets: [
-        {
-          name: 'registry-password'
-          value: registryPassword
-        }
-      ]
+      secrets: concat(registrySecret, keyVaultSecrets)
     }
     template: {
       containers: [
         {
           name: containerAppName
           image: containerImage
-          env: envVars
+          env: concat(envVars, secretRefEnvVars)
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
@@ -60,7 +79,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         }
       ]
       scale: {
-        minReplicas: 1    // Always keep 1 replica warm to avoid cold starts
+        minReplicas: 1
         maxReplicas: 10
       }
     }

@@ -122,7 +122,7 @@ module keyVault 'modules/keyVault.bicep' = {
 // Microservices Deployment
 // ============================================================================
 
-// Common environment variables - now using Key Vault URI
+// Common environment variables - non-sensitive only
 var commonEnvVars = [
   {
     name: 'KeyVault__Uri'
@@ -148,15 +148,21 @@ var commonEnvVars = [
     name: 'ServiceUrls__Api'
     value: 'https://tgp-api-${environmentName}.${acaEnv.outputs.defaultDomain}'
   }
+]
+
+// Secrets pulled from Key Vault at runtime (not exposed in plain text)
+var secretEnvVars = [
   {
     name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-    value: appInsights.outputs.connectionString
+    secretName: 'appinsights-connectionstring'
   }
   {
     name: 'Redis__ConnectionString'
-    value: '${redis.outputs.hostName}:6380,password=${redis.outputs.primaryKey},ssl=True,abortConnect=False'
+    secretName: 'redis-connectionstring'
   }
 ]
+
+
 
 // 1. SSO Service (Auth)
 module sso 'modules/container-app.bicep' = {
@@ -170,6 +176,8 @@ module sso 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: true
     tags: tags
@@ -189,6 +197,8 @@ module deviceGateway 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: true
     tags: tags
@@ -208,6 +218,8 @@ module userDashboard 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: true
     tags: tags
@@ -227,6 +239,8 @@ module analysis 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: false
     tags: tags
@@ -246,8 +260,10 @@ module reporting 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
-    isExternalIngress: false 
+    isExternalIngress: false
     tags: tags
   }
   dependsOn: [keyVault]
@@ -265,6 +281,8 @@ module api 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: true
     tags: tags
@@ -284,6 +302,8 @@ module adminPortal 'modules/container-app.bicep' = {
     registryUsername: acr.outputs.registryUsername
     registryPassword: acr.outputs.registryPassword
     envVars: commonEnvVars
+    secretEnvVars: secretEnvVars
+    keyVaultName: keyVault.outputs.keyVaultName
     containerPort: 8080
     isExternalIngress: true
     tags: tags

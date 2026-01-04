@@ -100,7 +100,7 @@ resource dbConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01'
 
 resource redisConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
-  name: 'Redis--ConnectionString'
+  name: 'redis-connectionstring'
   properties: {
     value: redisConnectionString
   }
@@ -124,7 +124,7 @@ resource storageConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-0
 
 resource appInsightsConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
-  name: 'APPLICATIONINSIGHTS--CONNECTIONSTRING' // Standard key for OTel/AppInsights
+  name: 'appinsights-connectionstring'
   properties: {
     value: appInsightsConnectionString
   }
