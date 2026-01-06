@@ -164,6 +164,10 @@ var secretEnvVars = [
     name: 'GitHub__WebhookSecret'
     secretName: 'github-webhook-secret'
   }
+  {
+    name: 'GitHub__Pat'
+    secretName: 'github-pat'
+  }
 ]
 
 
