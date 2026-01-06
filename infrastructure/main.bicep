@@ -160,6 +160,10 @@ var secretEnvVars = [
     name: 'Redis__ConnectionString'
     secretName: 'redis-connectionstring'
   }
+  {
+    name: 'GitHub__WebhookSecret'
+    secretName: 'github-webhook-secret'
+  }
 ]
 
 
