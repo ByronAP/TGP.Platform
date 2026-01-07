@@ -1,0 +1,63 @@
+@page "/IgnoredApps/Create"
+@model TGP.AdminPortal.Pages.IgnoredApps.CreateModel
+@{
+    ViewData["Title"] = "Add Ignored App";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Add Ignored Application</h2>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        
+        <form method="post">
+            <div class="form-group">
+                <label for="ProcessName">Process Name</label>
+                <input type="text" class="form-control" id="ProcessName" name="ProcessName" 
+                       value="@Model.ProcessName" placeholder="e.g., svchost.exe" required />
+                <small class="form-text text-muted">The exact process name as it appears in Task Manager (case-insensitive).</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="Platform">Platform</label>
+                <select class="form-control" id="Platform" name="Platform" required>
+                    <option value="Windows" selected="@(Model.Platform == "Windows")">Windows</option>
+                    <option value="MacOS" selected="@(Model.Platform == "MacOS")">MacOS</option>
+                    <option value="Linux" selected="@(Model.Platform == "Linux")">Linux</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="Category">Category</label>
+                <select class="form-control" id="Category" name="Category">
+                    <option value="System" selected="@(Model.Category == "System")">System</option>
+                    <option value="Runtime" selected="@(Model.Category == "Runtime")">Runtime</option>
+                    <option value="Driver" selected="@(Model.Category == "Driver")">Driver</option>
+                    <option value="Background" selected="@(Model.Category == "Background")">Background</option>
+                    <option value="">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="Description">Description (Optional)</label>
+                <input type="text" class="form-control" id="Description" name="Description" 
+                       value="@Model.Description" placeholder="e.g., Windows Service Host" />
+            </div>
+            
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="IsEnabled" name="IsEnabled" 
+                       value="true" checked="@Model.IsEnabled" />
+                <label class="form-check-label" for="IsEnabled">Enabled</label>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a href="/IgnoredApps" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
