@@ -22,3 +22,6 @@
 [submodule "TGP.Microservices.Api"]
 	path = TGP.Microservices.Api
 	url = https://github.com/ByronAP/TGP.Microservices.Api.git
+[submodule "TGP.AdminPortal"]
+	path = TGP.AdminPortal
+	url = https://github.com/ByronAP/TGP.AdminPortal.git
