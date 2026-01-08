@@ -25,3 +25,9 @@
 [submodule "TGP.AdminPortal"]
 	path = TGP.AdminPortal
 	url = https://github.com/ByronAP/TGP.AdminPortal.git
+[submodule "TGP.TestDataGenerator"]
+	path = TGP.TestDataGenerator
+	url = https://github.com/ByronAP/TGP.TestDataGenerator.git
+[submodule "TGP.Client.Windows"]
+	path = TGP.Client.Windows
+	url = https://github.com/ByronAP/TGP.Client.Windows.git
