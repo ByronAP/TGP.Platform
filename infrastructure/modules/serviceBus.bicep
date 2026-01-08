@@ -29,6 +29,23 @@ resource deviceGatewaySubscription 'Microsoft.ServiceBus/namespaces/topics/subsc
   }
 }
 
+
+resource eventsTopic 'Microsoft.ServiceBus/namespaces/topics@2022-10-01-preview' = {
+  parent: serviceBus
+  name: 'tgp.events'
+  properties: {}
+}
+
+resource dashboardSubscription 'Microsoft.ServiceBus/namespaces/topics/subscriptions@2022-10-01-preview' = {
+  parent: eventsTopic
+  name: 'user-dashboard'
+  properties: {
+    maxDeliveryCount: 10
+    deadLetteringOnFilterEvaluationExceptions: true
+    deadLetteringOnMessageExpiration: true
+  }
+}
+
 output endpoint string = serviceBus.properties.serviceBusEndpoint
 output namespaceName string = serviceBus.name
 #disable-next-line use-resource-id-functions // Suppress warning about manual ID construction if needed, or just use listKeys on the resource
