@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using TGP.AdminPortal.Services;
 using TGP.Data;
 using TGP.Data.Entities;
 using TGP.Data.Messages;
@@ -15,6 +16,7 @@ public class IndexModel : PageModel
 {
     private readonly TgpDbContext _dbContext;
     private readonly ServiceBusClient? _serviceBusClient;
+    private readonly IBlobDeletionService? _blobDeletionService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<IndexModel> _logger;
 
@@ -22,12 +24,14 @@ public class IndexModel : PageModel
         TgpDbContext dbContext,
         IConfiguration configuration,
         ILogger<IndexModel> logger,
-        ServiceBusClient? serviceBusClient = null)
+        ServiceBusClient? serviceBusClient = null,
+        IBlobDeletionService? blobDeletionService = null)
     {
         _dbContext = dbContext;
         _configuration = configuration;
         _logger = logger;
         _serviceBusClient = serviceBusClient;
+        _blobDeletionService = blobDeletionService;
     }
 
     public List<ClientSoftwareVersion> Versions { get; set; } = new();
@@ -73,13 +77,31 @@ public class IndexModel : PageModel
         var version = await _dbContext.ClientSoftwareVersions.FindAsync(ReleaseId);
         if (version == null) return NotFound();
 
+        // Delete blobs from storage first
+        if (_blobDeletionService != null)
+        {
+            if (!string.IsNullOrEmpty(version.DownloadUrl))
+            {
+                await _blobDeletionService.DeleteBlobAsync(version.DownloadUrl);
+            }
+            if (!string.IsNullOrEmpty(version.InstallerUrl))
+            {
+                await _blobDeletionService.DeleteBlobAsync(version.InstallerUrl);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Blob deletion service not configured. Blobs will not be deleted for version {Version}.", version.Version);
+        }
+
+        // Remove database record
         _dbContext.ClientSoftwareVersions.Remove(version);
         await _dbContext.SaveChangesAsync();
 
-        // No need to publish update for delete usually, unless we want to force clients to downgrade? 
-        // Downgrade isn't supported by 'IsNewer' logic in Gateway anyway.
-        // But invalidating cache is good practice.
+        // Invalidate cache
         await PublishUpdateMessage(version);
+
+        _logger.LogInformation("Deleted version {Version} for {Platform} (including blobs)", version.Version, version.Platform);
 
         return RedirectToPage();
     }

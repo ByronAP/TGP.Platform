@@ -1,5 +1,6 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
@@ -7,6 +8,7 @@ using TGP.Data;
 using TGP.Data.Configuration;
 using TGP.Data.Repositories;
 using TGP.Data.Repositories.Interfaces;
+using TGP.AdminPortal.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
@@ -131,6 +133,14 @@ var sbConnectionString = builder.Configuration["ServiceBus:ConnectionString"];
 if (!string.IsNullOrEmpty(sbConnectionString))
 {
     builder.Services.AddSingleton(new Azure.Messaging.ServiceBus.ServiceBusClient(sbConnectionString));
+}
+
+// Azure Blob Storage (for deleting client installer blobs)
+var storageConnectionString = builder.Configuration["Storage:ConnectionString"];
+if (!string.IsNullOrEmpty(storageConnectionString))
+{
+    builder.Services.AddSingleton(new BlobServiceClient(storageConnectionString));
+    builder.Services.AddScoped<IBlobDeletionService, BlobDeletionService>();
 }
 
 
