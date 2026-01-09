@@ -46,6 +46,16 @@ resource dashboardSubscription 'Microsoft.ServiceBus/namespaces/topics/subscript
   }
 }
 
+
+resource commandsQueue 'Microsoft.ServiceBus/namespaces/queues@2022-10-01-preview' = {
+  parent: serviceBus
+  name: 'tgp.device.commands'
+  properties: {
+    maxDeliveryCount: 10
+    deadLetteringOnMessageExpiration: true
+  }
+}
+
 output endpoint string = serviceBus.properties.serviceBusEndpoint
 output namespaceName string = serviceBus.name
 #disable-next-line use-resource-id-functions // Suppress warning about manual ID construction if needed, or just use listKeys on the resource
